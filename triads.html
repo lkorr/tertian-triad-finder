@@ -145,6 +145,11 @@
     background: #231f18; border-top: 1px solid #5a4a2a; border-bottom: 1px solid #5a4a2a;
     margin-bottom: 0;
   }
+  .saved-type-header {
+    color: #aaa; font-size: 0.8em; padding: 4px 10px;
+    background: #1e1e1e; border-bottom: 1px solid #333;
+    margin-bottom: 0;
+  }
   .unsave-btn {
     float: right; background: none; border: none; color: #744; cursor: pointer;
     font-size: 0.85em; padding: 0 4px;
@@ -797,16 +802,37 @@ function renderSaved() {
     const stepsHeader = hasEdo
       ? `<span class="sep"> </span><span style="min-width:80px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span>`
       : '';
-    const isSevGroup = group.some(s => s.type === 'seventh' || (s.centsKey||'').split(',').length === 4);
-    html.push(
-      `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
-      `<span style="width:${isSevGroup?'280':'210'}px;flex-shrink:0">chord</span><span class="sep"> </span>` +
-      `<span style="width:${isSevGroup?'200':'130'}px;flex-shrink:0">thirds</span><span class="sep"> </span>` +
-      `<span style="width:${isSevGroup?'290':'220'}px;flex-shrink:0">cents</span><span class="sep"> </span>` +
-      `<span style="min-width:${isSevGroup?'150':'120'}px;flex-shrink:0">integer</span>${stepsHeader}</div>`
-    );
 
-    for (const s of group) html.push(savedRowHtml(s));
+    const triads    = group.filter(s => s.type !== 'seventh' && (s.centsKey||'').split(',').length !== 4);
+    const sevenths  = group.filter(s => s.type === 'seventh' || (s.centsKey||'').split(',').length === 4);
+
+    if (triads.length) {
+      html.push(
+        `<div class="saved-type-header">Triads</div>` +
+        `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
+        `<span style="width:210px;flex-shrink:0">chord (1/1 · 3rd · 5th)</span><span class="sep"> </span>` +
+        `<span style="width:130px;flex-shrink:0">thirds (lower · upper)</span><span class="sep"> </span>` +
+        `<span style="width:220px;flex-shrink:0">cents (0 · mid · top)</span><span class="sep"> </span>` +
+        `<span style="min-width:120px;flex-shrink:0">integer</span>${stepsHeader}</div>`
+      );
+      for (const s of triads) html.push(savedRowHtml(s));
+    }
+
+    if (sevenths.length) {
+      const sevStepsHeader = hasEdo
+        ? `<span class="sep"> </span><span style="min-width:100px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span>`
+        : '';
+      html.push(
+        `<div class="saved-type-header">Seventh chords</div>` +
+        `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
+        `<span style="width:280px;flex-shrink:0">chord (1/1 · 3rd · 5th · 7th)</span><span class="sep"> </span>` +
+        `<span style="width:200px;flex-shrink:0">thirds (lower · middle · upper)</span><span class="sep"> </span>` +
+        `<span style="width:290px;flex-shrink:0">cents (0 · mid · 5th · top)</span><span class="sep"> </span>` +
+        `<span style="min-width:150px;flex-shrink:0">integer</span>${sevStepsHeader}</div>`
+      );
+      for (const s of sevenths) html.push(savedRowHtml(s));
+    }
+
     html.push(`</div>`);
   }
 

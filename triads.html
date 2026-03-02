@@ -727,7 +727,7 @@ function renderSevenths(f, edoState) {
       t.fifthCx <= f.fifthCx && t.seventhCx <= f.seventhCx &&
       (!survivors || (survivors.has(t.t2) && survivors.has(t.t3)))
     );
-    group.sort((a,b) => (a.t2.cx+a.t3.cx)-(b.t2.cx+b.t3.cx) || a.t2.cx-b.t2.cx);
+    group.sort((a,b) => a.t2.cx - b.t2.cx || a.t3.cx - b.t3.cx);
     if (!group.length) continue;
 
     html.push(`<div class="group-header">── Bottom third: ${fr(t1.ratio)} &nbsp;(${t1.name}, ${t1.cents.toFixed(2)}c) ──</div>`);

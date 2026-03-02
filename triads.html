@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JI Triads &amp; Seventh Chords</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: monospace;
+    background: #1a1a1a;
+    color: #ddd;
+    padding: 20px;
+    font-size: 14px;
+  }
+  h1 { color: #aef; margin-bottom: 16px; font-size: 1.3em; }
+
+  .controls {
+    background: #252525;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .control-group { display: flex; flex-direction: column; gap: 5px; }
+  .control-group label { color: #aaa; font-size: 0.85em; }
+  .control-group .row { display: flex; align-items: center; gap: 8px; }
+  input[type=range] { width: 180px; accent-color: #6af; }
+  input[type=number] {
+    width: 64px; background: #333; color: #ddd; border: 1px solid #555;
+    padding: 4px 6px; border-radius: 4px; font: inherit;
+  }
+  select {
+    background: #333; color: #ddd; border: 1px solid #555;
+    padding: 4px 8px; border-radius: 4px; font: inherit; cursor: pointer;
+  }
+  button {
+    background: #334; color: #aef; border: 1px solid #556;
+    padding: 4px 10px; border-radius: 4px; font: inherit; cursor: pointer;
+  }
+  button:hover { background: #445; }
+  button.active { background: #246; border-color: #6af; color: #6df; }
+  button.active-edo { background: #422; border-color: #a66; color: #faa; }
+  .val { color: #6af; min-width: 60px; font-size: 0.9em; }
+  .hint { color: #555; font-size: 0.78em; }
+  .stats { color: #888; font-size: 0.85em; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab {
+    padding: 6px 18px; border: 1px solid #444; border-radius: 4px 4px 0 0;
+    cursor: pointer; color: #888; background: #222; font: inherit; font-size: 0.9em;
+  }
+  .tab.active { background: #252535; color: #aef; border-color: #556; border-bottom-color: #252535; }
+
+  .chord-list { display: flex; flex-direction: column; }
+
+  .group-header {
+    background: #252535; color: #aac; padding: 5px 10px;
+    border-top: 1px solid #3a3a5a; border-bottom: 1px solid #3a3a5a;
+    font-size: 0.88em; margin-top: 10px;
+  }
+  .group-header:first-child { margin-top: 0; }
+
+  .chord-row {
+    display: flex; align-items: baseline; padding: 3px 10px;
+    border-bottom: 1px solid #222; cursor: pointer; user-select: none;
+  }
+  .chord-row:nth-child(even) { background: #1e1e1e; }
+  .chord-row:hover { background: #212130; }
+  .chord-row.playing-ji  { background: #1a2a1a !important; }
+  .chord-row.playing-edo { background: #2a1a1a !important; }
+
+  .col-labels {
+    display: flex; align-items: baseline; padding: 4px 10px 2px;
+    border-bottom: 1px solid #333; font-size: 0.78em; color: #666;
+    background: #1c1c1c; position: sticky; top: 0; z-index: 1;
+  }
+
+  .col-notes  { flex-shrink: 0; color: #cda; }
+  .col-thirds { flex-shrink: 0; color: #fe8; }
+  .col-cents  { flex-shrink: 0; color: #8d8; }
+  .col-int    { flex-shrink: 0; color: #d9f; min-width: 120px; }
+  .col-steps     { flex-shrink: 0; color: #fa8; min-width: 80px; }
+  .col-edo-cents { flex-shrink: 0; color: #b8d; min-width: 110px; }
+
+  #edoSummary {
+    background: #1e1e2a;
+    border: 1px solid #3a3a5a;
+    border-radius: 5px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 0.82em;
+    color: #99a;
+    line-height: 1.7;
+  }
+  #edoSummary .eq-group { margin-bottom: 2px; }
+  #edoSummary .eq-winner { color: #afa; }
+  #edoSummary .eq-loser  { color: #a88; text-decoration: line-through; }
+  #edoSummary .eq-oob    { color: #666; }
+  #edoSummary .eq-step   { color: #fa8; min-width: 28px; display: inline-block; }
+  .sep { color: #444; padding: 0 8px; flex-shrink: 0; }
+
+  .triad-notes   { width: 210px; }
+  .triad-thirds  { width: 130px; }
+  .triad-cents   { width: 220px; }
+  .seventh-notes  { width: 280px; }
+  .seventh-thirds { width: 200px; }
+  .seventh-cents  { width: 290px; }
+
+  .n, .c, .r { display: inline-block; }
+  .triad-notes  .n { width: 68px; }
+  .triad-thirds .r { width: 62px; }
+  .triad-cents  .c { width: 72px; }
+  .seventh-notes  .n { width: 68px; }
+  .seventh-thirds .r { width: 62px; }
+  .seventh-cents  .c { width: 72px; }
+
+  .empty { color: #555; padding: 20px 10px; }
+</style>
+</head>
+<body>
+
+<h1>JI Chords from Stacked Thirds</h1>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Third complexity</label>
+    <div class="row">
+      <input type="range" id="thirdCx" min="0" max="1000" value="1000">
+      <span class="val" id="thirdCxVal">20,000</span>
+    </div>
+    <div class="hint">Max num×den for each third interval</div>
+  </div>
+  <div class="control-group">
+    <label>Fifth complexity</label>
+    <div class="row">
+      <input type="range" id="fifthCx" min="0" max="1000" value="1000">
+      <span class="val" id="fifthCxVal">50,000</span>
+    </div>
+    <div class="hint">Max num×den for root→5th interval</div>
+  </div>
+  <div class="control-group" id="seventhCxGroup">
+    <label>Seventh complexity</label>
+    <div class="row">
+      <input type="range" id="seventhCx" min="0" max="1000" value="1000">
+      <span class="val" id="seventhCxVal">100,000</span>
+    </div>
+    <div class="hint">Max num×den for root→7th interval</div>
+  </div>
+  <div class="control-group">
+    <label>EDO filter</label>
+    <div class="row">
+      <input type="number" id="edoInput" min="1" max="1000" value="31" placeholder="EDO">
+      <button id="edoBtn" onclick="toggleEdo()">Apply</button>
+    </div>
+    <div class="row" style="margin-top:2px">
+      <span style="color:#666;font-size:0.82em">max error</span>
+      <input type="number" id="edoMaxError" min="0" max="100" value="30" step="1" style="width:50px">
+      <span style="color:#666;font-size:0.82em">¢</span>
+    </div>
+    <div class="hint">Removes thirds mistuned or colliding with simpler interval</div>
+  </div>
+  <div class="control-group">
+    <label>Playback</label>
+    <div class="row">
+      <select id="timbre">
+        <option value="sine">Sine</option>
+        <option value="triangle">Triangle</option>
+        <option value="sawtooth">Sawtooth</option>
+        <option value="square">Square</option>
+      </select>
+    </div>
+    <div class="row" style="margin-top:4px">
+      <button id="playEdoBtn" onclick="togglePlayEdo()">Play EDO</button>
+    </div>
+    <div class="hint">Click a row to play · Play EDO uses quantized pitches</div>
+  </div>
+  <div class="control-group" style="margin-top:auto">
+    <div class="stats" id="stats"></div>
+  </div>
+</div>
+
+<div id="edoSummary" style="display:none"></div>
+
+<div class="tabs">
+  <button class="tab active" id="tabTriads"   onclick="setMode('triads')">Triads</button>
+  <button class="tab"        id="tabSevenths" onclick="setMode('sevenths')">Seventh Chords</button>
+</div>
+
+<div id="chordList" class="chord-list"></div>
+
+<script>
+/* ── Data ── */
+const THIRDS = [
+  { ratio: [15,13], cents: 247.741, cx: 15*13, name: "tridecimal inframinor" },
+  { ratio: [7,6],   cents: 266.871, cx: 7*6,   name: "subminor" },
+  { ratio: [33,28], cents: 284.447, cx: 33*28,  name: "undecimal supraminor" },
+  { ratio: [13,11], cents: 289.210, cx: 13*11,  name: "tridecimal minor" },
+  { ratio: [6,5],   cents: 315.641, cx: 6*5,    name: "minor" },
+  { ratio: [11,9],  cents: 347.408, cx: 11*9,   name: "undecimal neutral" },
+  { ratio: [27,22], cents: 354.547, cx: 27*22,  name: "rastmic neutral" },
+  { ratio: [5,4],   cents: 386.314, cx: 5*4,    name: "major" },
+  { ratio: [33,26], cents: 412.745, cx: 33*26,  name: "tridecimal major" },
+  { ratio: [14,11], cents: 417.508, cx: 14*11,  name: "undecimal major" },
+  { ratio: [9,7],   cents: 435.084, cx: 9*7,    name: "supermajor" },
+  { ratio: [13,10], cents: 454.214, cx: 13*10,  name: "tridecimal ultramajor" },
+];
+
+/* ── Math helpers ── */
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+function lcm(a, b) { return a / gcd(a, b) * b; }
+function mulR(r1, r2) {
+  const n = r1[0]*r2[0], d = r1[1]*r2[1], g = gcd(n,d);
+  return [n/g, d/g];
+}
+function fr(r) { return r[0]+'/'+r[1]; }
+
+function intChord(ratios) {
+  const L = ratios.reduce((acc, r) => lcm(acc, r[1]), 1);
+  const nums = ratios.map(r => r[0] * (L / r[1]));
+  const g = nums.reduce(gcd);
+  return nums.map(n => n / g).join(':');
+}
+
+/* ── EDO logic ── */
+const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29];
+
+function primeEdoSteps(edo) {
+  const steps = {};
+  for (const p of PRIMES) steps[p] = Math.round(Math.log2(p) * edo);
+  return steps;
+}
+
+function primeFactors(n) {
+  const factors = {};
+  for (const p of PRIMES) {
+    while (n % p === 0) { factors[p] = (factors[p] || 0) + 1; n /= p; }
+  }
+  if (n > 1) factors[n] = (factors[n] || 0) + 1;
+  return factors;
+}
+
+function ratioEdoStep(ratio, primeSteps, edo) {
+  const nf = primeFactors(ratio[0]);
+  const df = primeFactors(ratio[1]);
+  let step = 0;
+  for (const [p, e] of Object.entries(nf)) step += (primeSteps[p] ?? Math.round(Math.log2(p) * edo)) * e;
+  for (const [p, e] of Object.entries(df)) step -= (primeSteps[p] ?? Math.round(Math.log2(p) * edo)) * e;
+  return step;
+}
+
+// Returns { survivors: Set, stepMap: Map<third,step>, withSteps: Array, stepSize }
+function edoFilterThirds(thirds, edo, maxErrorCents) {
+  const primeSteps = primeEdoSteps(edo);
+  const stepSize   = 1200 / edo;
+
+  const withSteps = thirds.map(t => {
+    const step  = ratioEdoStep(t.ratio, primeSteps, edo);
+    const error = Math.abs(step * stepSize - t.cents);
+    return { t, step, error, inTune: error <= maxErrorCents };
+  });
+
+  const stepMap = new Map(withSteps.map(({ t, step }) => [t, step]));
+
+  const inTune = withSteps.filter(w => w.inTune);
+  const best   = new Map();
+  for (const { t, step } of inTune) {
+    if (!best.has(step) || t.cx < best.get(step).cx) best.set(step, t);
+  }
+
+  return { survivors: new Set(best.values()), stepMap, withSteps, stepSize };
+}
+
+function renderEdoSummary(edoState) {
+  const el = document.getElementById('edoSummary');
+  if (!edoState) { el.style.display = 'none'; return; }
+
+  const { survivors, withSteps, stepSize, edo } = edoState;
+
+  // Group all thirds by their EDO step
+  const byStep = new Map();
+  for (const w of withSteps) {
+    if (!byStep.has(w.step)) byStep.set(w.step, []);
+    byStep.get(w.step).push(w);
+  }
+
+  // Sort steps
+  const sortedSteps = [...byStep.keys()].sort((a,b) => a - b);
+
+  const lines = [`<strong style="color:#aac">${edo}edo mapping</strong>  <span style="color:#555;font-size:0.9em">(green = kept, strikethrough = displaced, grey = out of tune range)</span>`];
+
+  for (const step of sortedSteps) {
+    const group = byStep.get(step).sort((a,b) => a.t.cx - b.t.cx);
+    const edoCents = (step * stepSize).toFixed(1);
+    const parts = group.map(w => {
+      const err = w.error.toFixed(1);
+      const ratio = fr(w.t.ratio);
+      if (!w.inTune) {
+        return `<span class="eq-oob" title="${err}¢ error">${ratio}</span>`;
+      } else if (survivors.has(w.t)) {
+        return `<span class="eq-winner" title="${err}¢ error">${ratio}</span>`;
+      } else {
+        return `<span class="eq-loser" title="${err}¢ error">${ratio}</span>`;
+      }
+    });
+    lines.push(`<div class="eq-group"><span class="eq-step">step ${step}</span> <span style="color:#666">(${edoCents}¢)</span>  ${parts.join('  ')}</div>`);
+  }
+
+  el.innerHTML = lines.join('\n');
+  el.style.display = '';
+}
+
+let edoActive   = false;
+let playEdoMode = false;
+
+function toggleEdo() {
+  edoActive = !edoActive;
+  document.getElementById('edoBtn').classList.toggle('active', edoActive);
+  document.getElementById('edoBtn').textContent = edoActive ? 'Clear' : 'Apply';
+  render();
+}
+
+function togglePlayEdo() {
+  playEdoMode = !playEdoMode;
+  const btn = document.getElementById('playEdoBtn');
+  btn.classList.toggle('active-edo', playEdoMode);
+  btn.textContent = playEdoMode ? 'Play JI' : 'Play EDO';
+}
+
+function getEdoState() {
+  if (!edoActive) return null;
+  const edo          = parseInt(document.getElementById('edoInput').value, 10);
+  const maxError     = parseFloat(document.getElementById('edoMaxError').value) || 30;
+  if (!edo || edo < 1) return null;
+  return { edo, ...edoFilterThirds(THIRDS, edo, maxError) };
+}
+
+/* ── Build chord tables ── */
+function buildTriads() {
+  const out = [];
+  for (const t1 of THIRDS)
+    for (const t2 of THIRDS) {
+      const fifth = mulR(t1.ratio, t2.ratio);
+      out.push({ t1, t2, fifth, fifthCx: fifth[0]*fifth[1], fifthCents: t1.cents+t2.cents });
+    }
+  return out;
+}
+
+function buildSevenths() {
+  const out = [];
+  for (const t1 of THIRDS)
+    for (const t2 of THIRDS) {
+      const fifth = mulR(t1.ratio, t2.ratio);
+      const fifthCents = t1.cents + t2.cents;
+      for (const t3 of THIRDS) {
+        const seventh = mulR(fifth, t3.ratio);
+        out.push({
+          t1, t2, t3,
+          fifth, fifthCx: fifth[0]*fifth[1], fifthCents,
+          seventh, seventhCx: seventh[0]*seventh[1],
+          seventhCents: fifthCents + t3.cents,
+        });
+      }
+    }
+  return out;
+}
+
+const ALL_TRIADS   = buildTriads();
+const ALL_SEVENTHS = buildSevenths();
+
+/* ── Audio ── */
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new AudioContext();
+  return audioCtx;
+}
+function centsToFreq(baseHz, cents) { return baseHz * Math.pow(2, cents / 1200); }
+
+function playChord(centsArray) {
+  const ctx    = getAudioCtx();
+  const timbre = document.getElementById('timbre').value;
+  const baseHz = 261.63;
+  const now    = ctx.currentTime;
+  const attack = 0.01, release = 5.0;
+  for (const c of centsArray) {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = timbre;
+    osc.frequency.value = centsToFreq(baseHz, c);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.18, now + attack);
+    gain.gain.setValueAtTime(0.18, now + attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + attack + release);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + attack + release + 0.1);
+  }
+}
+
+/* ── Mode ── */
+let mode = 'triads';
+function setMode(m) {
+  mode = m;
+  document.getElementById('tabTriads').classList.toggle('active',   m==='triads');
+  document.getElementById('tabSevenths').classList.toggle('active', m==='sevenths');
+  document.getElementById('seventhCxGroup').style.display = m==='sevenths' ? '' : 'none';
+  render();
+}
+
+/* ── Filters ── */
+function sliderToCx(pos, max) { return Math.round(Math.pow(pos / 1000, 3) * max); }
+function getFilters() {
+  return {
+    thirdCx:   sliderToCx(+document.getElementById('thirdCx').value,   20000),
+    fifthCx:   sliderToCx(+document.getElementById('fifthCx').value,   50000),
+    seventhCx: sliderToCx(+document.getElementById('seventhCx').value, 100000),
+  };
+}
+
+/* ── Render helpers ── */
+function stepsToEdoCents(steps, edo) {
+  return steps.map(s => s * (1200 / edo));
+}
+
+function makeRow(centsData, edoStepsData, edo, notes, thirds, cents, intStr, stepsCol) {
+  return `<div class="chord-row" data-cents="${centsData}" data-edo-steps="${edoStepsData}" data-edo="${edo}">`
+    + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
+    + `<span class="sep">|</span><span class="col-int">${intStr}</span>${stepsCol}</div>`;
+}
+
+/* ── Render triads ── */
+function renderTriads(f, edoState) {
+  const survivors = edoState ? edoState.survivors : null;
+  const stepMap   = edoState ? edoState.stepMap   : null;
+  const edo       = edoState ? edoState.edo        : 0;
+
+  let activeThirds = THIRDS.filter(t => t.cx <= f.thirdCx);
+  if (survivors) activeThirds = activeThirds.filter(t => survivors.has(t));
+  activeThirds.sort((a,b) => a.cx - b.cx);
+
+  const html = [];
+  let count = 0;
+
+  html.push(
+    `<div class="col-labels">` +
+    `<span style="width:210px;flex-shrink:0">chord (1/1 · 3rd · 5th)</span><span class="sep"> </span>` +
+    `<span style="width:130px;flex-shrink:0">thirds (lower · upper)</span><span class="sep"> </span>` +
+    `<span style="width:220px;flex-shrink:0">cents (0 · mid · top)</span><span class="sep"> </span>` +
+    `<span style="min-width:120px;flex-shrink:0">integer</span>` +
+    (stepMap ? `<span class="sep"> </span><span style="min-width:80px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span>` : ``) +
+    `</div>`
+  );
+
+  for (const t1 of activeThirds) {
+    const group = ALL_TRIADS.filter(t =>
+      t.t1 === t1 && t.t2.cx <= f.thirdCx && t.fifthCx <= f.fifthCx &&
+      (!survivors || survivors.has(t.t2))
+    ).sort((a,b) => a.t2.cx - b.t2.cx);
+    if (!group.length) continue;
+
+    html.push(`<div class="group-header">── Bottom third: ${fr(t1.ratio)} &nbsp;(${t1.name}, ${t1.cents.toFixed(2)}c) ──</div>`);
+
+    for (const t of group) {
+      const notes  = `<span class="col-notes triad-notes"><span class="n">1/1</span><span class="n">${fr(t.t1.ratio)}</span><span class="n">${fr(t.fifth)}</span></span>`;
+      const thirds = `<span class="col-thirds triad-thirds"><span class="r">${fr(t.t1.ratio)}</span><span class="r">${fr(t.t2.ratio)}</span></span>`;
+      const cents  = `<span class="col-cents triad-cents"><span class="c">0c</span><span class="c">${t.t1.cents.toFixed(2)}c</span><span class="c">${t.fifthCents.toFixed(2)}c</span></span>`;
+      const intStr = intChord([[1,1], t.t1.ratio, t.fifth]);
+      const s1 = stepMap ? stepMap.get(t.t1) : 0;
+      const s2 = stepMap ? stepMap.get(t.t2) : 0;
+      const edoSteps = [0, s1, s1+s2];
+      const edoCentsArr = edoSteps.map(s => (s * edoState.stepSize).toFixed(1) + 'c');
+      const stepsCol = stepMap
+        ? `<span class="sep">|</span><span class="col-steps">${edoSteps.join(' ')}</span><span class="sep">|</span><span class="col-edo-cents">${edoCentsArr.join('  ')}</span>`
+        : ``;
+      html.push(makeRow(`0,${t.t1.cents},${t.fifthCents}`, edoSteps.join(','), edo, notes, thirds, cents, intStr, stepsCol));
+      count++;
+    }
+  }
+
+  document.getElementById('stats').textContent =
+    `Showing ${count} of ${ALL_TRIADS.length} triads  ·  ${activeThirds.length}/${THIRDS.length} thirds active`;
+  return html;
+}
+
+/* ── Render sevenths ── */
+function renderSevenths(f, edoState) {
+  const survivors = edoState ? edoState.survivors : null;
+  const stepMap   = edoState ? edoState.stepMap   : null;
+  const edo       = edoState ? edoState.edo        : 0;
+
+  let activeThirds = THIRDS.filter(t => t.cx <= f.thirdCx);
+  if (survivors) activeThirds = activeThirds.filter(t => survivors.has(t));
+  activeThirds.sort((a,b) => a.cx - b.cx);
+
+  const html = [];
+  let count = 0;
+
+  html.push(
+    `<div class="col-labels">` +
+    `<span style="width:280px;flex-shrink:0">chord (1/1 · 3rd · 5th · 7th)</span><span class="sep"> </span>` +
+    `<span style="width:200px;flex-shrink:0">thirds (lower · middle · upper)</span><span class="sep"> </span>` +
+    `<span style="width:290px;flex-shrink:0">cents (0 · mid · 5th · top)</span><span class="sep"> </span>` +
+    `<span style="min-width:150px;flex-shrink:0">integer</span>` +
+    (stepMap ? `<span class="sep"> </span><span style="min-width:100px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span>` : ``) +
+    `</div>`
+  );
+
+  for (const t1 of activeThirds) {
+    const group = ALL_SEVENTHS.filter(t =>
+      t.t1 === t1 && t.t2.cx <= f.thirdCx && t.t3.cx <= f.thirdCx &&
+      t.fifthCx <= f.fifthCx && t.seventhCx <= f.seventhCx &&
+      (!survivors || (survivors.has(t.t2) && survivors.has(t.t3)))
+    ).sort((a,b) => (a.t2.cx + a.t3.cx) - (b.t2.cx + b.t3.cx) || a.t2.cx - b.t2.cx);
+    if (!group.length) continue;
+
+    html.push(`<div class="group-header">── Bottom third: ${fr(t1.ratio)} &nbsp;(${t1.name}, ${t1.cents.toFixed(2)}c) ──</div>`);
+
+    for (const t of group) {
+      const notes  = `<span class="col-notes seventh-notes"><span class="n">1/1</span><span class="n">${fr(t.t1.ratio)}</span><span class="n">${fr(t.fifth)}</span><span class="n">${fr(t.seventh)}</span></span>`;
+      const thirds = `<span class="col-thirds seventh-thirds"><span class="r">${fr(t.t1.ratio)}</span><span class="r">${fr(t.t2.ratio)}</span><span class="r">${fr(t.t3.ratio)}</span></span>`;
+      const cents  = `<span class="col-cents seventh-cents"><span class="c">0c</span><span class="c">${t.t1.cents.toFixed(2)}c</span><span class="c">${t.fifthCents.toFixed(2)}c</span><span class="c">${t.seventhCents.toFixed(2)}c</span></span>`;
+      const intStr = intChord([[1,1], t.t1.ratio, t.fifth, t.seventh]);
+      const s1 = stepMap ? stepMap.get(t.t1) : 0;
+      const s2 = stepMap ? stepMap.get(t.t2) : 0;
+      const s3 = stepMap ? stepMap.get(t.t3) : 0;
+      const edoSteps = [0, s1, s1+s2, s1+s2+s3];
+      const edoCentsArr = edoSteps.map(s => (s * edoState.stepSize).toFixed(1) + 'c');
+      const stepsCol = stepMap
+        ? `<span class="sep">|</span><span class="col-steps">${edoSteps.join(' ')}</span><span class="sep">|</span><span class="col-edo-cents">${edoCentsArr.join('  ')}</span>`
+        : ``;
+      html.push(makeRow(`0,${t.t1.cents},${t.fifthCents},${t.seventhCents}`, edoSteps.join(','), edo, notes, thirds, cents, intStr, stepsCol));
+      count++;
+    }
+  }
+
+  document.getElementById('stats').textContent =
+    `Showing ${count} of ${ALL_SEVENTHS.length} seventh chords  ·  ${activeThirds.length}/${THIRDS.length} thirds active`;
+  return html;
+}
+
+/* ── Render ── */
+function render() {
+  const f        = getFilters();
+  const edoState = getEdoState();
+  renderEdoSummary(edoState);
+  const html     = mode === 'triads' ? renderTriads(f, edoState) : renderSevenths(f, edoState);
+  if (html.length <= 1) html.push('<div class="empty">No chords match the current filters.</div>');
+  document.getElementById('chordList').innerHTML = html.join('');
+
+  document.querySelectorAll('.chord-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const useEdo = playEdoMode && row.dataset.edo && +row.dataset.edo > 0;
+      let centsArray;
+      if (useEdo) {
+        const edo   = +row.dataset.edo;
+        const steps = row.dataset.edoSteps.split(',').map(Number);
+        centsArray  = stepsToEdoCents(steps, edo);
+        row.classList.add('playing-edo');
+        setTimeout(() => row.classList.remove('playing-edo'), 5100);
+      } else {
+        centsArray = row.dataset.cents.split(',').map(Number);
+        row.classList.add('playing-ji');
+        setTimeout(() => row.classList.remove('playing-ji'), 5100);
+      }
+      playChord(centsArray);
+    });
+  });
+}
+
+/* ── Sliders setup ── */
+function setupSlider(id, valId, max) {
+  const el  = document.getElementById(id);
+  const val = document.getElementById(valId);
+  el.addEventListener('input', () => { val.textContent = sliderToCx(+el.value, max).toLocaleString(); render(); });
+  val.textContent = sliderToCx(+el.value, max).toLocaleString();
+}
+
+setupSlider('thirdCx',   'thirdCxVal',   20000);
+setupSlider('fifthCx',   'fifthCxVal',   50000);
+setupSlider('seventhCx', 'seventhCxVal', 100000);
+
+document.getElementById('edoInput').addEventListener('change',    () => { if (edoActive) render(); });
+document.getElementById('edoMaxError').addEventListener('change', () => { if (edoActive) render(); });
+
+setMode('triads');
+</script>
+</body>
+</html>

@@ -113,6 +113,9 @@
     border-bottom: 1px solid #333; font-size: 0.78em; color: #666;
     background: #1c1c1c; position: sticky; top: 0; z-index: 1;
   }
+  .col-sort { border-radius: 3px; padding: 1px 3px; }
+  .col-sort:hover { color: #aaa; background: #2a2a2a; }
+  .col-sort-active { color: #fa8; }
 
   /* ── Columns ── */
   .col-notes     { flex-shrink: 0; color: #cda; }
@@ -468,12 +471,20 @@ function toggleSave(centsKey, edo, label, jiCents, edoSteps, ratios, noteRatios,
 /* ══════════════════════════════════════════════
    CHORD TABLES
 ══════════════════════════════════════════════ */
+function intNums(ratios) {
+  const L    = ratios.reduce((acc, r) => lcm(acc, r[1]), 1);
+  const nums = ratios.map(r => r[0] * (L / r[1]));
+  const g    = nums.reduce(gcd);
+  return nums.map(n => n / g);
+}
+
 function buildTriads() {
   const out = [];
   for (const t1 of THIRDS)
     for (const t2 of THIRDS) {
       const fifth = mulR(t1.ratio, t2.ratio);
-      out.push({ t1, t2, fifth, fifthCx: fifth[0]*fifth[1], fifthCents: t1.cents+t2.cents });
+      const nums  = intNums([[1,1], t1.ratio, fifth]);
+      out.push({ t1, t2, fifth, fifthCx: fifth[0]*fifth[1], fifthCents: t1.cents+t2.cents, intNums: nums });
     }
   return out;
 }
@@ -486,11 +497,13 @@ function buildSevenths() {
       const fifthCents = t1.cents + t2.cents;
       for (const t3 of THIRDS) {
         const seventh = mulR(fifth, t3.ratio);
+        const nums    = intNums([[1,1], t1.ratio, fifth, seventh]);
         out.push({
           t1, t2, t3,
           fifth,     fifthCx: fifth[0]*fifth[1],       fifthCents,
           seventh,   seventhCx: seventh[0]*seventh[1],
           seventhCents: fifthCents + t3.cents,
+          intNums: nums,
         });
       }
     }
@@ -533,6 +546,7 @@ function playChord(centsArray) {
    MODE
 ══════════════════════════════════════════════ */
 let mode = 'triads';
+let sortCol = 'thirds'; // 'thirds' | 'chord' | 'cents' | 'integer' | 'steps'
 function setMode(m) {
   mode = m;
   document.getElementById('tabTriads').classList.toggle('active',   m==='triads');
@@ -655,6 +669,47 @@ function seventhRowHtml(t, stepMap, edoState, savedEdoNum) {
 }
 
 /* ══════════════════════════════════════════════
+   SORT COMPARATORS
+══════════════════════════════════════════════ */
+function cmpIntNums(a, b) {
+  const na = a.intNums, nb = b.intNums;
+  for (let i = 0; i < Math.min(na.length, nb.length); i++)
+    if (na[i] !== nb[i]) return na[i] - nb[i];
+  return 0;
+}
+
+function triadCmp(stepMap) {
+  return (a, b) => {
+    if (sortCol === 'cents' || sortCol === 'chord') return a.fifthCents - b.fifthCents;
+    if (sortCol === 'integer') return cmpIntNums(a, b);
+    if (sortCol === 'steps' && stepMap) {
+      const sa = (stepMap.get(a.t1)||0) + (stepMap.get(a.t2)||0);
+      const sb = (stepMap.get(b.t1)||0) + (stepMap.get(b.t2)||0);
+      return sa - sb;
+    }
+    return a.t2.cx - b.t2.cx; // 'thirds' default
+  };
+}
+
+function seventhCmp(stepMap) {
+  return (a, b) => {
+    if (sortCol === 'cents' || sortCol === 'chord') return a.seventhCents - b.seventhCents;
+    if (sortCol === 'integer') return cmpIntNums(a, b);
+    if (sortCol === 'steps' && stepMap) {
+      const sa = (stepMap.get(a.t1)||0) + (stepMap.get(a.t2)||0) + (stepMap.get(a.t3)||0);
+      const sb = (stepMap.get(b.t1)||0) + (stepMap.get(b.t2)||0) + (stepMap.get(b.t3)||0);
+      return sa - sb;
+    }
+    return a.t2.cx - b.t2.cx || a.t3.cx - b.t3.cx; // 'thirds' default
+  };
+}
+
+function colLabel(key, label, title) {
+  const active = sortCol === key;
+  return `<span class="col-sort${active ? ' col-sort-active' : ''}" data-sort="${key}" title="Sort by ${title}" style="cursor:pointer">${label}${active ? ' ↑' : ''}</span>`;
+}
+
+/* ══════════════════════════════════════════════
    RENDER TRIADS
 ══════════════════════════════════════════════ */
 function renderTriads(f, edoState) {
@@ -669,22 +724,23 @@ function renderTriads(f, edoState) {
   let count = 0;
 
   const stepsHeader = stepMap
-    ? `<span class="sep"> </span><span style="min-width:80px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span>`
+    ? `<span class="sep"> </span>${colLabel('steps','edo steps','EDO step value')}<span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span>`
     : '';
   html.push(
     `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
-    `<span style="width:210px;flex-shrink:0">chord (1/1 · 3rd · 5th)</span><span class="sep"> </span>` +
-    `<span style="width:130px;flex-shrink:0">thirds (lower · upper)</span><span class="sep"> </span>` +
-    `<span style="width:220px;flex-shrink:0">cents (0 · mid · top)</span><span class="sep"> </span>` +
-    `<span style="min-width:120px;flex-shrink:0">integer</span>${stepsHeader}</div>`
+    `<span style="width:210px;flex-shrink:0">${colLabel('chord','chord (1/1 · 3rd · 5th)','top note pitch')}</span><span class="sep"> </span>` +
+    `<span style="width:130px;flex-shrink:0">${colLabel('thirds','thirds (lower · upper)','interval complexity')}</span><span class="sep"> </span>` +
+    `<span style="width:220px;flex-shrink:0">${colLabel('cents','cents (0 · mid · top)','cent value')}</span><span class="sep"> </span>` +
+    `<span style="min-width:120px;flex-shrink:0">${colLabel('integer','integer','lowest integer ratio')}</span>${stepsHeader}</div>`
   );
 
+  const cmp = triadCmp(stepMap);
   for (const t1 of activeThirds) {
     let group = ALL_TRIADS.filter(t =>
       t.t1 === t1 && t.t2.cx <= f.thirdCx && t.fifthCx <= f.fifthCx &&
       (!survivors || survivors.has(t.t2))
     );
-    group.sort((a,b) => a.t2.cx - b.t2.cx);
+    group.sort(cmp);
     if (!group.length) continue;
 
     html.push(`<div class="group-header">── Bottom third: ${fr(t1.ratio)} &nbsp;(${t1.name}, ${t1.cents.toFixed(2)}c) ──</div>`);
@@ -711,23 +767,24 @@ function renderSevenths(f, edoState) {
   let count = 0;
 
   const stepsHeader = stepMap
-    ? `<span class="sep"> </span><span style="min-width:100px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span>`
+    ? `<span class="sep"> </span>${colLabel('steps','edo steps','EDO step value')}<span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span>`
     : '';
   html.push(
     `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
-    `<span style="width:280px;flex-shrink:0">chord (1/1 · 3rd · 5th · 7th)</span><span class="sep"> </span>` +
-    `<span style="width:200px;flex-shrink:0">thirds (lower · middle · upper)</span><span class="sep"> </span>` +
-    `<span style="width:290px;flex-shrink:0">cents (0 · mid · 5th · top)</span><span class="sep"> </span>` +
-    `<span style="min-width:150px;flex-shrink:0">integer</span>${stepsHeader}</div>`
+    `<span style="width:280px;flex-shrink:0">${colLabel('chord','chord (1/1 · 3rd · 5th · 7th)','top note pitch')}</span><span class="sep"> </span>` +
+    `<span style="width:200px;flex-shrink:0">${colLabel('thirds','thirds (lower · middle · upper)','interval complexity')}</span><span class="sep"> </span>` +
+    `<span style="width:290px;flex-shrink:0">${colLabel('cents','cents (0 · mid · 5th · top)','cent value')}</span><span class="sep"> </span>` +
+    `<span style="min-width:150px;flex-shrink:0">${colLabel('integer','integer','lowest integer ratio')}</span>${stepsHeader}</div>`
   );
 
+  const cmp = seventhCmp(stepMap);
   for (const t1 of activeThirds) {
     let group = ALL_SEVENTHS.filter(t =>
       t.t1 === t1 && t.t2.cx <= f.thirdCx && t.t3.cx <= f.thirdCx &&
       t.fifthCx <= f.fifthCx && t.seventhCx <= f.seventhCx &&
       (!survivors || (survivors.has(t.t2) && survivors.has(t.t3)))
     );
-    group.sort((a,b) => a.t2.cx - b.t2.cx || a.t3.cx - b.t3.cx);
+    group.sort(cmp);
     if (!group.length) continue;
 
     html.push(`<div class="group-header">── Bottom third: ${fr(t1.ratio)} &nbsp;(${t1.name}, ${t1.cents.toFixed(2)}c) ──</div>`);
@@ -857,6 +914,12 @@ function render() {
   const container = document.getElementById('chordList');
   container.innerHTML = html.join('');
   attachRowListeners(container);
+  container.querySelectorAll('.col-sort').forEach(el => {
+    el.addEventListener('click', () => {
+      sortCol = el.dataset.sort;
+      render();
+    });
+  });
 }
 
 /* ══════════════════════════════════════════════

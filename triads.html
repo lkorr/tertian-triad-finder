@@ -451,11 +451,11 @@ function unsaveChord(centsKey, edo) {
   render();
 }
 
-function toggleSave(centsKey, edo, label, jiCents, edoSteps, ratios, intStr, type) {
+function toggleSave(centsKey, edo, label, jiCents, edoSteps, ratios, noteRatios, intStr, type) {
   if (isSaved(centsKey, edo)) {
     unsaveChord(centsKey, edo);
   } else {
-    saveChord({ centsKey, label, edo, jiCents, edoSteps, ratios, intStr, type });
+    saveChord({ centsKey, label, edo, jiCents, edoSteps, ratios, noteRatios, intStr, type });
     render();
   }
 }
@@ -579,14 +579,15 @@ function attachRowListeners(container) {
     if (saveBtn) {
       saveBtn.addEventListener('click', e => {
         e.stopPropagation();
-        const centsKey = row.dataset.cents;
-        const edo      = +row.dataset.edo || 0;
-        const label    = row.dataset.label || centsKey;
-        const edoSteps = row.dataset.edoSteps || '';
-        const ratios   = row.dataset.ratios || '';
-        const intStr   = row.dataset.int || '';
-        const type     = row.dataset.type || 'triad';
-        toggleSave(centsKey, edo, label, centsKey, edoSteps, ratios, intStr, type);
+        const centsKey   = row.dataset.cents;
+        const edo        = +row.dataset.edo || 0;
+        const label      = row.dataset.label || centsKey;
+        const edoSteps   = row.dataset.edoSteps || '';
+        const ratios     = row.dataset.ratios || '';
+        const noteRatios = row.dataset.noteRatios || '';
+        const intStr     = row.dataset.int || '';
+        const type       = row.dataset.type || 'triad';
+        toggleSave(centsKey, edo, label, centsKey, edoSteps, ratios, noteRatios, intStr, type);
       });
     }
   });
@@ -618,7 +619,8 @@ function triadRowHtml(t, stepMap, edoState, savedEdoNum) {
   const sc       = stepMap ? stepsColHtml(edoSteps, edoState.stepSize) : '';
   const saved    = isSaved(centsKey, edo);
   const ratios   = [fr(t.t1.ratio), fr(t.t2.ratio)].join(',');
-  return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${centsKey}" data-edo-steps="${edoSteps.join(',')}" data-edo="${edo}" data-label="${label}" data-ratios="${ratios}" data-int="${intStr}" data-type="triad">`
+  const noteRatios = ['1/1', fr(t.t1.ratio), fr(t.fifth)].join(',');
+  return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${centsKey}" data-edo-steps="${edoSteps.join(',')}" data-edo="${edo}" data-label="${label}" data-ratios="${ratios}" data-note-ratios="${noteRatios}" data-int="${intStr}" data-type="triad">`
     + saveBtn(centsKey, edo)
     + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
     + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;
@@ -640,7 +642,8 @@ function seventhRowHtml(t, stepMap, edoState, savedEdoNum) {
   const sc = stepMap ? stepsColHtml(edoSteps, edoState.stepSize) : '';
   const saved = isSaved(centsKey, edo);
   const ratios = [fr(t.t1.ratio), fr(t.t2.ratio), fr(t.t3.ratio)].join(',');
-  return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${centsKey}" data-edo-steps="${edoSteps.join(',')}" data-edo="${edo}" data-label="${label}" data-ratios="${ratios}" data-int="${intStr}" data-type="seventh">`
+  const noteRatios = ['1/1', fr(t.t1.ratio), fr(t.fifth), fr(t.seventh)].join(',');
+  return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${centsKey}" data-edo-steps="${edoSteps.join(',')}" data-edo="${edo}" data-label="${label}" data-ratios="${ratios}" data-note-ratios="${noteRatios}" data-int="${intStr}" data-type="seventh">`
     + saveBtn(centsKey, edo)
     + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
     + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;
@@ -735,24 +738,25 @@ function renderSevenths(f, edoState) {
    RENDER SAVED TAB
 ══════════════════════════════════════════════ */
 function savedRowHtml(s) {
-  const edo      = s.edo || 0;
-  const stepSize = edo ? 1200 / edo : 0;
+  const edo       = s.edo || 0;
+  const stepSize  = edo ? 1200 / edo : 0;
   const centsVals = s.centsKey.split(',').map(Number);
   const isSeventh = s.type === 'seventh' || centsVals.length === 4;
 
-  // Reconstruct display spans from stored data
-  const noteLabels = s.label ? s.label.split(' ') : centsVals.map((c,i) => i===0 ? '1/1' : c.toFixed(2)+'c');
-  const notesSpans = noteLabels.map(n => `<span class="n">${n}</span>`).join('');
+  // Notes column: chord tones (1/1, t1, fifth[, seventh])
   const notesClass = isSeventh ? 'seventh-notes' : 'triad-notes';
+  const noteList   = s.noteRatios ? s.noteRatios.split(',') : (s.label ? s.label.split(' ') : []);
+  const notesSpans = noteList.map(n => `<span class="n">${n}</span>`).join('');
   const notes = `<span class="col-notes ${notesClass}">${notesSpans}</span>`;
 
+  // Thirds column: stacked interval thirds
   const thirdsClass = isSeventh ? 'seventh-thirds' : 'triad-thirds';
-  let thirdsHtml = '';
-  if (s.ratios) {
-    thirdsHtml = s.ratios.split(',').map(r => `<span class="r">${r}</span>`).join('');
-  }
-  const thirds = thirdsHtml ? `<span class="col-thirds ${thirdsClass}">${thirdsHtml}</span>` : '';
+  const thirdsList  = s.ratios ? s.ratios.split(',') : [];
+  const thirds = thirdsList.length
+    ? `<span class="col-thirds ${thirdsClass}">${thirdsList.map(r => `<span class="r">${r}</span>`).join('')}</span>`
+    : '';
 
+  // Cents column
   const centsClass = isSeventh ? 'seventh-cents' : 'triad-cents';
   const centsSpans = centsVals.map(c => `<span class="c">${c === 0 ? '0' : c.toFixed(2)}c</span>`).join('');
   const cents = `<span class="col-cents ${centsClass}">${centsSpans}</span>`;
@@ -760,12 +764,10 @@ function savedRowHtml(s) {
   const intStr = s.intStr || '';
 
   const edoStepsArr = s.edoSteps ? s.edoSteps.split(',').map(Number) : [];
-  const sc = (edo && edoStepsArr.length)
-    ? stepsColHtml(edoStepsArr, stepSize)
-    : '';
+  const sc = (edo && edoStepsArr.length) ? stepsColHtml(edoStepsArr, stepSize) : '';
 
   const saved = isSaved(s.centsKey, edo);
-  return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${s.centsKey}" data-edo-steps="${s.edoSteps||''}" data-edo="${edo}" data-label="${s.label||''}" data-ratios="${s.ratios||''}" data-int="${intStr}" data-type="${s.type||'triad'}">`
+  return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${s.centsKey}" data-edo-steps="${s.edoSteps||''}" data-edo="${edo}" data-label="${s.label||''}" data-ratios="${s.ratios||''}" data-note-ratios="${s.noteRatios||''}" data-int="${intStr}" data-type="${s.type||'triad'}">`
     + `<span class="col-save"><button class="save-btn${saved ? ' saved' : ''}" title="${saved ? 'Unsave' : 'Save'}">${saved ? '★' : '☆'}</button></span>`
     + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
     + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;

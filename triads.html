@@ -42,20 +42,40 @@
     padding: 4px 10px; border-radius: 4px; font: inherit; cursor: pointer;
   }
   button:hover { background: #445; }
-  button.active { background: #246; border-color: #6af; color: #6df; }
+  button.active     { background: #246; border-color: #6af; color: #6df; }
   button.active-edo { background: #422; border-color: #a66; color: #faa; }
-  .val { color: #6af; min-width: 60px; font-size: 0.9em; }
+  .val  { color: #6af; min-width: 60px; font-size: 0.9em; }
   .hint { color: #555; font-size: 0.78em; }
   .stats { color: #888; font-size: 0.85em; }
 
-  .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 0; }
   .tab {
     padding: 6px 18px; border: 1px solid #444; border-radius: 4px 4px 0 0;
     cursor: pointer; color: #888; background: #222; font: inherit; font-size: 0.9em;
   }
-  .tab.active { background: #252535; color: #aef; border-color: #556; border-bottom-color: #252535; }
+  .tab.active { background: #1c1c1c; color: #aef; border-color: #556; border-bottom-color: #1c1c1c; }
+  .tab-saved-count {
+    display: inline-block; background: #453; color: #af8; border-radius: 8px;
+    font-size: 0.78em; padding: 0 5px; margin-left: 5px; vertical-align: middle;
+  }
 
-  .chord-list { display: flex; flex-direction: column; }
+  /* ── EDO summary ── */
+  #edoSummary {
+    background: #1e1e2a; border: 1px solid #3a3a5a; border-radius: 5px;
+    padding: 10px 14px; margin-bottom: 14px; font-size: 0.82em; color: #99a; line-height: 1.7;
+  }
+  #edoSummary .eq-group  { margin-bottom: 2px; }
+  #edoSummary .eq-winner   { color: #afa; }
+  #edoSummary .eq-loser    { color: #a88; text-decoration: line-through; cursor: pointer; }
+  #edoSummary .eq-loser:hover  { color: #dc9; text-decoration: none; }
+  #edoSummary .eq-oob      { color: #666; }
+  #edoSummary .eq-forced   { color: #dc9; outline: 1px dashed #7a6; border-radius: 2px; cursor: pointer; }
+  #edoSummary .eq-forced:hover { color: #a88; text-decoration: line-through; }
+  #edoSummary .eq-step     { color: #fa8; min-width: 50px; display: inline-block; }
+
+  /* ── Chord list ── */
+  .chord-list { display: flex; flex-direction: column; border-top: 1px solid #556; }
 
   .group-header {
     background: #252535; color: #aac; padding: 5px 10px;
@@ -64,43 +84,43 @@
   }
   .group-header:first-child { margin-top: 0; }
 
+  /* ── Chord row ── */
   .chord-row {
-    display: flex; align-items: baseline; padding: 3px 10px;
+    display: flex; align-items: baseline; padding: 2px 6px 2px 0;
     border-bottom: 1px solid #222; cursor: pointer; user-select: none;
   }
   .chord-row:nth-child(even) { background: #1e1e1e; }
-  .chord-row:hover { background: #212130; }
-  .chord-row.playing-ji  { background: #1a2a1a !important; }
-  .chord-row.playing-edo { background: #2a1a1a !important; }
+  .chord-row:hover           { background: #212130; }
+  .chord-row.saved           { background: #1e2218 !important; }
+  .chord-row.saved:hover     { background: #252a1e !important; }
+  .chord-row.playing-ji      { background: #1a2a1a !important; }
+  .chord-row.playing-edo     { background: #2a1a1a !important; }
 
+  /* ── Save button cell ── */
+  .col-save {
+    flex-shrink: 0; width: 28px; text-align: center; padding: 0 2px;
+  }
+  .save-btn {
+    background: none; border: none; color: #444; cursor: pointer;
+    font-size: 13px; padding: 1px 3px; border-radius: 3px; line-height: 1;
+  }
+  .save-btn:hover { color: #8a6; background: #2a3020; }
+  .save-btn.saved { color: #8d5; }
+
+  /* ── Column label row ── */
   .col-labels {
-    display: flex; align-items: baseline; padding: 4px 10px 2px;
+    display: flex; align-items: baseline; padding: 4px 6px 2px 0;
     border-bottom: 1px solid #333; font-size: 0.78em; color: #666;
     background: #1c1c1c; position: sticky; top: 0; z-index: 1;
   }
 
-  .col-notes  { flex-shrink: 0; color: #cda; }
-  .col-thirds { flex-shrink: 0; color: #fe8; }
-  .col-cents  { flex-shrink: 0; color: #8d8; }
-  .col-int    { flex-shrink: 0; color: #d9f; min-width: 120px; }
+  /* ── Columns ── */
+  .col-notes     { flex-shrink: 0; color: #cda; }
+  .col-thirds    { flex-shrink: 0; color: #fe8; }
+  .col-cents     { flex-shrink: 0; color: #8d8; }
+  .col-int       { flex-shrink: 0; color: #d9f; min-width: 120px; }
   .col-steps     { flex-shrink: 0; color: #fa8; min-width: 80px; }
   .col-edo-cents { flex-shrink: 0; color: #b8d; min-width: 110px; }
-
-  #edoSummary {
-    background: #1e1e2a;
-    border: 1px solid #3a3a5a;
-    border-radius: 5px;
-    padding: 10px 14px;
-    margin-bottom: 14px;
-    font-size: 0.82em;
-    color: #99a;
-    line-height: 1.7;
-  }
-  #edoSummary .eq-group { margin-bottom: 2px; }
-  #edoSummary .eq-winner { color: #afa; }
-  #edoSummary .eq-loser  { color: #a88; text-decoration: line-through; }
-  #edoSummary .eq-oob    { color: #666; }
-  #edoSummary .eq-step   { color: #fa8; min-width: 28px; display: inline-block; }
   .sep { color: #444; padding: 0 8px; flex-shrink: 0; }
 
   .triad-notes   { width: 210px; }
@@ -111,12 +131,25 @@
   .seventh-cents  { width: 290px; }
 
   .n, .c, .r { display: inline-block; }
-  .triad-notes  .n { width: 68px; }
-  .triad-thirds .r { width: 62px; }
-  .triad-cents  .c { width: 72px; }
+  .triad-notes   .n { width: 68px; }
+  .triad-thirds  .r { width: 62px; }
+  .triad-cents   .c { width: 72px; }
   .seventh-notes  .n { width: 68px; }
   .seventh-thirds .r { width: 62px; }
   .seventh-cents  .c { width: 72px; }
+
+  /* ── Saved chords tab ── */
+  .saved-edo-group { margin-top: 16px; }
+  .saved-edo-header {
+    color: #fa8; font-size: 0.9em; padding: 4px 10px;
+    background: #231f18; border-top: 1px solid #5a4a2a; border-bottom: 1px solid #5a4a2a;
+    margin-bottom: 0;
+  }
+  .unsave-btn {
+    float: right; background: none; border: none; color: #744; cursor: pointer;
+    font-size: 0.85em; padding: 0 4px;
+  }
+  .unsave-btn:hover { color: #d66; }
 
   .empty { color: #555; padding: 20px 10px; }
 </style>
@@ -188,12 +221,15 @@
 <div class="tabs">
   <button class="tab active" id="tabTriads"   onclick="setMode('triads')">Triads</button>
   <button class="tab"        id="tabSevenths" onclick="setMode('sevenths')">Seventh Chords</button>
+  <button class="tab"        id="tabSaved"    onclick="setMode('saved')">Saved <span class="tab-saved-count" id="savedCount">0</span></button>
 </div>
 
 <div id="chordList" class="chord-list"></div>
 
 <script>
-/* ── Data ── */
+/* ══════════════════════════════════════════════
+   DATA
+══════════════════════════════════════════════ */
 const THIRDS = [
   { ratio: [15,13], cents: 247.741, cx: 15*13, name: "tridecimal inframinor" },
   { ratio: [7,6],   cents: 266.871, cx: 7*6,   name: "subminor" },
@@ -209,7 +245,9 @@ const THIRDS = [
   { ratio: [13,10], cents: 454.214, cx: 13*10,  name: "tridecimal ultramajor" },
 ];
 
-/* ── Math helpers ── */
+/* ══════════════════════════════════════════════
+   MATH
+══════════════════════════════════════════════ */
 function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
 function lcm(a, b) { return a / gcd(a, b) * b; }
 function mulR(r1, r2) {
@@ -219,13 +257,15 @@ function mulR(r1, r2) {
 function fr(r) { return r[0]+'/'+r[1]; }
 
 function intChord(ratios) {
-  const L = ratios.reduce((acc, r) => lcm(acc, r[1]), 1);
+  const L    = ratios.reduce((acc, r) => lcm(acc, r[1]), 1);
   const nums = ratios.map(r => r[0] * (L / r[1]));
-  const g = nums.reduce(gcd);
+  const g    = nums.reduce(gcd);
   return nums.map(n => n / g).join(':');
 }
 
-/* ── EDO logic ── */
+/* ══════════════════════════════════════════════
+   EDO LOGIC
+══════════════════════════════════════════════ */
 const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29];
 
 function primeEdoSteps(edo) {
@@ -244,77 +284,104 @@ function primeFactors(n) {
 }
 
 function ratioEdoStep(ratio, primeSteps, edo) {
-  const nf = primeFactors(ratio[0]);
-  const df = primeFactors(ratio[1]);
+  const nf = primeFactors(ratio[0]), df = primeFactors(ratio[1]);
   let step = 0;
-  for (const [p, e] of Object.entries(nf)) step += (primeSteps[p] ?? Math.round(Math.log2(p) * edo)) * e;
-  for (const [p, e] of Object.entries(df)) step -= (primeSteps[p] ?? Math.round(Math.log2(p) * edo)) * e;
+  for (const [p, e] of Object.entries(nf)) step += (primeSteps[p] ?? Math.round(Math.log2(p)*edo)) * e;
+  for (const [p, e] of Object.entries(df)) step -= (primeSteps[p] ?? Math.round(Math.log2(p)*edo)) * e;
   return step;
 }
 
-// Returns { survivors: Set, stepMap: Map<third,step>, withSteps: Array, stepSize }
-function edoFilterThirds(thirds, edo, maxErrorCents) {
+function edoFilterThirds(thirds, edo, maxErrorCents, forced) {
   const primeSteps = primeEdoSteps(edo);
   const stepSize   = 1200 / edo;
-
-  const withSteps = thirds.map(t => {
-    const step  = ratioEdoStep(t.ratio, primeSteps, edo);
-    const error = Math.abs(step * stepSize - t.cents);
-    return { t, step, error, inTune: error <= maxErrorCents };
+  const withSteps  = thirds.map(t => {
+    const step     = ratioEdoStep(t.ratio, primeSteps, edo);
+    const error    = Math.abs(step * stepSize - t.cents);
+    const isForced = forced && forced.has(fr(t.ratio));
+    return { t, step, error, inTune: error <= maxErrorCents || isForced, isForced };
   });
-
   const stepMap = new Map(withSteps.map(({ t, step }) => [t, step]));
-
-  const inTune = withSteps.filter(w => w.inTune);
-  const best   = new Map();
-  for (const { t, step } of inTune) {
-    if (!best.has(step) || t.cx < best.get(step).cx) best.set(step, t);
+  // Build survivors: forced thirds always win their step; otherwise keep simplest in-tune third
+  const best = new Map();
+  // First pass: non-forced in-tune
+  for (const { t, step, inTune, isForced } of withSteps) {
+    if (inTune && !isForced && (!best.has(step) || t.cx < best.get(step).t.cx))
+      best.set(step, { t, isForced: false });
   }
-
-  return { survivors: new Set(best.values()), stepMap, withSteps, stepSize };
+  // Second pass: forced (override whatever is there)
+  for (const { t, step, isForced } of withSteps) {
+    if (isForced) best.set(step + '_f_' + fr(t.ratio), { t, isForced: true });
+  }
+  const survivors = new Set([...best.values()].map(v => v.t));
+  return { survivors, stepMap, withSteps, stepSize };
 }
 
 function renderEdoSummary(edoState) {
   const el = document.getElementById('edoSummary');
   if (!edoState) { el.style.display = 'none'; return; }
-
   const { survivors, withSteps, stepSize, edo } = edoState;
+  const forced = getForcedSet(edo);
 
-  // Group all thirds by their EDO step
   const byStep = new Map();
   for (const w of withSteps) {
     if (!byStep.has(w.step)) byStep.set(w.step, []);
     byStep.get(w.step).push(w);
   }
-
-  // Sort steps
   const sortedSteps = [...byStep.keys()].sort((a,b) => a - b);
-
-  const lines = [`<strong style="color:#aac">${edo}edo mapping</strong>  <span style="color:#555;font-size:0.9em">(green = kept, strikethrough = displaced, grey = out of tune range)</span>`];
-
+  const lines = [
+    `<strong style="color:#aac">${edo}edo mapping</strong>  ` +
+    `<span style="color:#555;font-size:0.9em">` +
+    `green=kept  <span style="color:#a88;text-decoration:line-through">strikethrough</span>=displaced (click to force-include)  ` +
+    `<span style="color:#dc9;outline:1px dashed #7a6;border-radius:2px;padding:0 2px">dashed</span>=force-included (click to remove)  ` +
+    `<span style="color:#555">grey</span>=out of range</span>`
+  ];
   for (const step of sortedSteps) {
-    const group = byStep.get(step).sort((a,b) => a.t.cx - b.t.cx);
+    const group    = byStep.get(step).sort((a,b) => a.t.cx - b.t.cx);
     const edoCents = (step * stepSize).toFixed(1);
-    const parts = group.map(w => {
-      const err = w.error.toFixed(1);
-      const ratio = fr(w.t.ratio);
-      if (!w.inTune) {
-        return `<span class="eq-oob" title="${err}¢ error">${ratio}</span>`;
-      } else if (survivors.has(w.t)) {
+    const parts    = group.map(w => {
+      const err      = w.error.toFixed(1);
+      const ratio    = fr(w.t.ratio);
+      const isForced = forced.has(ratio);
+      // forced-included: dashed yellow, clickable to remove
+      if (isForced)
+        return `<span class="eq-forced" data-ratio="${ratio}" title="Force-included · ${err}¢ error · click to remove">${ratio}</span>`;
+      // normal winner
+      if (survivors.has(w.t))
         return `<span class="eq-winner" title="${err}¢ error">${ratio}</span>`;
-      } else {
-        return `<span class="eq-loser" title="${err}¢ error">${ratio}</span>`;
-      }
+      // out of tune range — not clickable
+      if (!w.inTune)
+        return `<span class="eq-oob" title="${err}¢ error (out of range)">${ratio}</span>`;
+      // displaced — clickable to force-include
+      return `<span class="eq-loser" data-ratio="${ratio}" title="Displaced · ${err}¢ error · click to force-include">${ratio}</span>`;
     });
-    lines.push(`<div class="eq-group"><span class="eq-step">step ${step}</span> <span style="color:#666">(${edoCents}¢)</span>  ${parts.join('  ')}</div>`);
+    lines.push(`<div class="eq-group"><span class="eq-step">step ${step}</span><span style="color:#666">(${edoCents}¢)</span>  ${parts.join('  ')}</div>`);
   }
-
   el.innerHTML = lines.join('\n');
   el.style.display = '';
+
+  // Attach click handlers for losers and forced spans
+  el.querySelectorAll('.eq-loser[data-ratio], .eq-forced[data-ratio]').forEach(span => {
+    span.addEventListener('click', () => toggleForced(edo, span.dataset.ratio));
+  });
 }
 
-let edoActive   = false;
-let playEdoMode = false;
+let edoActive      = false;
+let playEdoMode    = false;
+// ratioStr -> forced into pool even if displaced/oob; keyed by edo
+// Map<edo, Set<ratioStr>>
+const forcedByEdo  = new Map();
+
+function getForcedSet(edo) {
+  if (!forcedByEdo.has(edo)) forcedByEdo.set(edo, new Set());
+  return forcedByEdo.get(edo);
+}
+
+function toggleForced(edo, ratioStr) {
+  const forced = getForcedSet(edo);
+  if (forced.has(ratioStr)) forced.delete(ratioStr);
+  else                      forced.add(ratioStr);
+  render();
+}
 
 function toggleEdo() {
   edoActive = !edoActive;
@@ -332,13 +399,70 @@ function togglePlayEdo() {
 
 function getEdoState() {
   if (!edoActive) return null;
-  const edo          = parseInt(document.getElementById('edoInput').value, 10);
-  const maxError     = parseFloat(document.getElementById('edoMaxError').value) || 30;
+  const edo      = parseInt(document.getElementById('edoInput').value, 10);
+  const maxError = parseFloat(document.getElementById('edoMaxError').value) || 30;
   if (!edo || edo < 1) return null;
-  return { edo, ...edoFilterThirds(THIRDS, edo, maxError) };
+  const forced   = getForcedSet(edo);
+  return { edo, ...edoFilterThirds(THIRDS, edo, maxError, forced) };
 }
 
-/* ── Build chord tables ── */
+function currentEdoNum() {
+  return edoActive ? (parseInt(document.getElementById('edoInput').value,10) || 0) : 0;
+}
+
+/* ══════════════════════════════════════════════
+   SAVED CHORDS  (localStorage)
+══════════════════════════════════════════════ */
+const STORAGE_KEY = 'ji_triad_saved_chords';
+
+// Each entry: { centsKey, label, edo, jiCents, edoSteps }
+// centsKey = "0,315.641,701.955" (the JI cents string — unique chord id)
+let savedChords = [];
+
+function loadSaved() {
+  try {
+    savedChords = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch { savedChords = []; }
+}
+
+function persistSaved() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedChords));
+  updateSavedCount();
+}
+
+function updateSavedCount() {
+  document.getElementById('savedCount').textContent = savedChords.length;
+}
+
+function isSaved(centsKey, edo) {
+  return savedChords.some(s => s.centsKey === centsKey && s.edo === edo);
+}
+
+function saveChord(entry) {
+  if (!isSaved(entry.centsKey, entry.edo)) {
+    savedChords.push(entry);
+    persistSaved();
+  }
+}
+
+function unsaveChord(centsKey, edo) {
+  savedChords = savedChords.filter(s => !(s.centsKey === centsKey && s.edo === edo));
+  persistSaved();
+  render();
+}
+
+function toggleSave(centsKey, edo, label, jiCents, edoSteps, ratios, intStr, type) {
+  if (isSaved(centsKey, edo)) {
+    unsaveChord(centsKey, edo);
+  } else {
+    saveChord({ centsKey, label, edo, jiCents, edoSteps, ratios, intStr, type });
+    render();
+  }
+}
+
+/* ══════════════════════════════════════════════
+   CHORD TABLES
+══════════════════════════════════════════════ */
 function buildTriads() {
   const out = [];
   for (const t1 of THIRDS)
@@ -359,8 +483,8 @@ function buildSevenths() {
         const seventh = mulR(fifth, t3.ratio);
         out.push({
           t1, t2, t3,
-          fifth, fifthCx: fifth[0]*fifth[1], fifthCents,
-          seventh, seventhCx: seventh[0]*seventh[1],
+          fifth,     fifthCx: fifth[0]*fifth[1],       fifthCents,
+          seventh,   seventhCx: seventh[0]*seventh[1],
           seventhCents: fifthCents + t3.cents,
         });
       }
@@ -371,13 +495,12 @@ function buildSevenths() {
 const ALL_TRIADS   = buildTriads();
 const ALL_SEVENTHS = buildSevenths();
 
-/* ── Audio ── */
+/* ══════════════════════════════════════════════
+   AUDIO
+══════════════════════════════════════════════ */
 let audioCtx = null;
-function getAudioCtx() {
-  if (!audioCtx) audioCtx = new AudioContext();
-  return audioCtx;
-}
-function centsToFreq(baseHz, cents) { return baseHz * Math.pow(2, cents / 1200); }
+function getAudioCtx() { if (!audioCtx) audioCtx = new AudioContext(); return audioCtx; }
+function centsToFreq(baseHz, c) { return baseHz * Math.pow(2, c/1200); }
 
 function playChord(centsArray) {
   const ctx    = getAudioCtx();
@@ -401,18 +524,23 @@ function playChord(centsArray) {
   }
 }
 
-/* ── Mode ── */
+/* ══════════════════════════════════════════════
+   MODE
+══════════════════════════════════════════════ */
 let mode = 'triads';
 function setMode(m) {
   mode = m;
   document.getElementById('tabTriads').classList.toggle('active',   m==='triads');
   document.getElementById('tabSevenths').classList.toggle('active', m==='sevenths');
+  document.getElementById('tabSaved').classList.toggle('active',    m==='saved');
   document.getElementById('seventhCxGroup').style.display = m==='sevenths' ? '' : 'none';
   render();
 }
 
-/* ── Filters ── */
-function sliderToCx(pos, max) { return Math.round(Math.pow(pos / 1000, 3) * max); }
+/* ══════════════════════════════════════════════
+   FILTERS
+══════════════════════════════════════════════ */
+function sliderToCx(pos, max) { return Math.round(Math.pow(pos/1000, 3) * max); }
 function getFilters() {
   return {
     thirdCx:   sliderToCx(+document.getElementById('thirdCx').value,   20000),
@@ -421,22 +549,109 @@ function getFilters() {
   };
 }
 
-/* ── Render helpers ── */
-function stepsToEdoCents(steps, edo) {
-  return steps.map(s => s * (1200 / edo));
+/* ══════════════════════════════════════════════
+   ROW BUILDING
+══════════════════════════════════════════════ */
+function stepsToEdoCents(steps, edo) { return steps.map(s => s * (1200/edo)); }
+
+function attachRowListeners(container) {
+  container.querySelectorAll('.chord-row').forEach(row => {
+    // play on row click (but not on save button)
+    row.addEventListener('click', e => {
+      if (e.target.closest('.save-btn')) return;
+      const useEdo  = playEdoMode && row.dataset.edo && +row.dataset.edo > 0;
+      let centsArr;
+      if (useEdo) {
+        const steps = row.dataset.edoSteps.split(',').map(Number);
+        centsArr    = stepsToEdoCents(steps, +row.dataset.edo);
+        row.classList.add('playing-edo');
+        setTimeout(() => row.classList.remove('playing-edo'), 5100);
+      } else {
+        centsArr = row.dataset.cents.split(',').map(Number);
+        row.classList.add('playing-ji');
+        setTimeout(() => row.classList.remove('playing-ji'), 5100);
+      }
+      playChord(centsArr);
+    });
+
+    // save button
+    const saveBtn = row.querySelector('.save-btn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const centsKey = row.dataset.cents;
+        const edo      = +row.dataset.edo || 0;
+        const label    = row.dataset.label || centsKey;
+        const edoSteps = row.dataset.edoSteps || '';
+        const ratios   = row.dataset.ratios || '';
+        const intStr   = row.dataset.int || '';
+        const type     = row.dataset.type || 'triad';
+        toggleSave(centsKey, edo, label, centsKey, edoSteps, ratios, intStr, type);
+      });
+    }
+  });
 }
 
-function makeRow(centsData, edoStepsData, edo, notes, thirds, cents, intStr, stepsCol) {
-  return `<div class="chord-row" data-cents="${centsData}" data-edo-steps="${edoStepsData}" data-edo="${edo}">`
+function saveBtn(centsKey, edo) {
+  const saved = isSaved(centsKey, edo);
+  return `<span class="col-save"><button class="save-btn${saved ? ' saved' : ''}" title="${saved ? 'Unsave' : 'Save'}">${saved ? '★' : '☆'}</button></span>`;
+}
+
+function stepsColHtml(edoSteps, stepSize) {
+  const edoCentsArr = edoSteps.map(s => (s * stepSize).toFixed(1) + 'c');
+  return `<span class="sep">|</span><span class="col-steps">${edoSteps.join(' ')}</span>`
+       + `<span class="sep">|</span><span class="col-edo-cents">${edoCentsArr.join('  ')}</span>`;
+}
+
+/* ── Triad row HTML ── */
+function triadRowHtml(t, stepMap, edoState, savedEdoNum) {
+  const notes  = `<span class="col-notes triad-notes"><span class="n">1/1</span><span class="n">${fr(t.t1.ratio)}</span><span class="n">${fr(t.fifth)}</span></span>`;
+  const thirds = `<span class="col-thirds triad-thirds"><span class="r">${fr(t.t1.ratio)}</span><span class="r">${fr(t.t2.ratio)}</span></span>`;
+  const cents  = `<span class="col-cents triad-cents"><span class="c">0c</span><span class="c">${t.t1.cents.toFixed(2)}c</span><span class="c">${t.fifthCents.toFixed(2)}c</span></span>`;
+  const intStr = intChord([[1,1], t.t1.ratio, t.fifth]);
+  const centsKey = `0,${t.t1.cents},${t.fifthCents}`;
+  const label    = `1/1 ${fr(t.t1.ratio)} ${fr(t.fifth)}`;
+  const edo      = edoState ? edoState.edo : savedEdoNum || 0;
+  const s1       = stepMap ? (stepMap.get(t.t1) || 0) : 0;
+  const s2       = stepMap ? (stepMap.get(t.t2) || 0) : 0;
+  const edoSteps = [0, s1, s1+s2];
+  const sc       = stepMap ? stepsColHtml(edoSteps, edoState.stepSize) : '';
+  const saved    = isSaved(centsKey, edo);
+  const ratios   = [fr(t.t1.ratio), fr(t.t2.ratio)].join(',');
+  return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${centsKey}" data-edo-steps="${edoSteps.join(',')}" data-edo="${edo}" data-label="${label}" data-ratios="${ratios}" data-int="${intStr}" data-type="triad">`
+    + saveBtn(centsKey, edo)
     + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
-    + `<span class="sep">|</span><span class="col-int">${intStr}</span>${stepsCol}</div>`;
+    + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;
 }
 
-/* ── Render triads ── */
+/* ── Seventh row HTML ── */
+function seventhRowHtml(t, stepMap, edoState, savedEdoNum) {
+  const notes  = `<span class="col-notes seventh-notes"><span class="n">1/1</span><span class="n">${fr(t.t1.ratio)}</span><span class="n">${fr(t.fifth)}</span><span class="n">${fr(t.seventh)}</span></span>`;
+  const thirds = `<span class="col-thirds seventh-thirds"><span class="r">${fr(t.t1.ratio)}</span><span class="r">${fr(t.t2.ratio)}</span><span class="r">${fr(t.t3.ratio)}</span></span>`;
+  const cents  = `<span class="col-cents seventh-cents"><span class="c">0c</span><span class="c">${t.t1.cents.toFixed(2)}c</span><span class="c">${t.fifthCents.toFixed(2)}c</span><span class="c">${t.seventhCents.toFixed(2)}c</span></span>`;
+  const intStr = intChord([[1,1], t.t1.ratio, t.fifth, t.seventh]);
+  const centsKey = `0,${t.t1.cents},${t.fifthCents},${t.seventhCents}`;
+  const label    = `1/1 ${fr(t.t1.ratio)} ${fr(t.fifth)} ${fr(t.seventh)}`;
+  const edo      = edoState ? edoState.edo : savedEdoNum || 0;
+  const s1 = stepMap ? (stepMap.get(t.t1)||0) : 0;
+  const s2 = stepMap ? (stepMap.get(t.t2)||0) : 0;
+  const s3 = stepMap ? (stepMap.get(t.t3)||0) : 0;
+  const edoSteps = [0, s1, s1+s2, s1+s2+s3];
+  const sc = stepMap ? stepsColHtml(edoSteps, edoState.stepSize) : '';
+  const saved = isSaved(centsKey, edo);
+  const ratios = [fr(t.t1.ratio), fr(t.t2.ratio), fr(t.t3.ratio)].join(',');
+  return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${centsKey}" data-edo-steps="${edoSteps.join(',')}" data-edo="${edo}" data-label="${label}" data-ratios="${ratios}" data-int="${intStr}" data-type="seventh">`
+    + saveBtn(centsKey, edo)
+    + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
+    + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;
+}
+
+/* ══════════════════════════════════════════════
+   RENDER TRIADS
+══════════════════════════════════════════════ */
 function renderTriads(f, edoState) {
   const survivors = edoState ? edoState.survivors : null;
   const stepMap   = edoState ? edoState.stepMap   : null;
-  const edo       = edoState ? edoState.edo        : 0;
 
   let activeThirds = THIRDS.filter(t => t.cx <= f.thirdCx);
   if (survivors) activeThirds = activeThirds.filter(t => survivors.has(t));
@@ -445,40 +660,27 @@ function renderTriads(f, edoState) {
   const html = [];
   let count = 0;
 
+  const stepsHeader = stepMap
+    ? `<span class="sep"> </span><span style="min-width:80px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span>`
+    : '';
   html.push(
-    `<div class="col-labels">` +
+    `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
     `<span style="width:210px;flex-shrink:0">chord (1/1 · 3rd · 5th)</span><span class="sep"> </span>` +
     `<span style="width:130px;flex-shrink:0">thirds (lower · upper)</span><span class="sep"> </span>` +
     `<span style="width:220px;flex-shrink:0">cents (0 · mid · top)</span><span class="sep"> </span>` +
-    `<span style="min-width:120px;flex-shrink:0">integer</span>` +
-    (stepMap ? `<span class="sep"> </span><span style="min-width:80px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span>` : ``) +
-    `</div>`
+    `<span style="min-width:120px;flex-shrink:0">integer</span>${stepsHeader}</div>`
   );
 
   for (const t1 of activeThirds) {
-    const group = ALL_TRIADS.filter(t =>
+    let group = ALL_TRIADS.filter(t =>
       t.t1 === t1 && t.t2.cx <= f.thirdCx && t.fifthCx <= f.fifthCx &&
       (!survivors || survivors.has(t.t2))
-    ).sort((a,b) => a.t2.cx - b.t2.cx);
+    );
+    group.sort((a,b) => a.t2.cx - b.t2.cx);
     if (!group.length) continue;
 
     html.push(`<div class="group-header">── Bottom third: ${fr(t1.ratio)} &nbsp;(${t1.name}, ${t1.cents.toFixed(2)}c) ──</div>`);
-
-    for (const t of group) {
-      const notes  = `<span class="col-notes triad-notes"><span class="n">1/1</span><span class="n">${fr(t.t1.ratio)}</span><span class="n">${fr(t.fifth)}</span></span>`;
-      const thirds = `<span class="col-thirds triad-thirds"><span class="r">${fr(t.t1.ratio)}</span><span class="r">${fr(t.t2.ratio)}</span></span>`;
-      const cents  = `<span class="col-cents triad-cents"><span class="c">0c</span><span class="c">${t.t1.cents.toFixed(2)}c</span><span class="c">${t.fifthCents.toFixed(2)}c</span></span>`;
-      const intStr = intChord([[1,1], t.t1.ratio, t.fifth]);
-      const s1 = stepMap ? stepMap.get(t.t1) : 0;
-      const s2 = stepMap ? stepMap.get(t.t2) : 0;
-      const edoSteps = [0, s1, s1+s2];
-      const edoCentsArr = edoSteps.map(s => (s * edoState.stepSize).toFixed(1) + 'c');
-      const stepsCol = stepMap
-        ? `<span class="sep">|</span><span class="col-steps">${edoSteps.join(' ')}</span><span class="sep">|</span><span class="col-edo-cents">${edoCentsArr.join('  ')}</span>`
-        : ``;
-      html.push(makeRow(`0,${t.t1.cents},${t.fifthCents}`, edoSteps.join(','), edo, notes, thirds, cents, intStr, stepsCol));
-      count++;
-    }
+    for (const t of group) { html.push(triadRowHtml(t, stepMap, edoState, 0)); count++; }
   }
 
   document.getElementById('stats').textContent =
@@ -486,11 +688,12 @@ function renderTriads(f, edoState) {
   return html;
 }
 
-/* ── Render sevenths ── */
+/* ══════════════════════════════════════════════
+   RENDER SEVENTHS
+══════════════════════════════════════════════ */
 function renderSevenths(f, edoState) {
   const survivors = edoState ? edoState.survivors : null;
   const stepMap   = edoState ? edoState.stepMap   : null;
-  const edo       = edoState ? edoState.edo        : 0;
 
   let activeThirds = THIRDS.filter(t => t.cx <= f.thirdCx);
   if (survivors) activeThirds = activeThirds.filter(t => survivors.has(t));
@@ -499,42 +702,28 @@ function renderSevenths(f, edoState) {
   const html = [];
   let count = 0;
 
+  const stepsHeader = stepMap
+    ? `<span class="sep"> </span><span style="min-width:100px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span>`
+    : '';
   html.push(
-    `<div class="col-labels">` +
+    `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
     `<span style="width:280px;flex-shrink:0">chord (1/1 · 3rd · 5th · 7th)</span><span class="sep"> </span>` +
     `<span style="width:200px;flex-shrink:0">thirds (lower · middle · upper)</span><span class="sep"> </span>` +
     `<span style="width:290px;flex-shrink:0">cents (0 · mid · 5th · top)</span><span class="sep"> </span>` +
-    `<span style="min-width:150px;flex-shrink:0">integer</span>` +
-    (stepMap ? `<span class="sep"> </span><span style="min-width:100px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span>` : ``) +
-    `</div>`
+    `<span style="min-width:150px;flex-shrink:0">integer</span>${stepsHeader}</div>`
   );
 
   for (const t1 of activeThirds) {
-    const group = ALL_SEVENTHS.filter(t =>
+    let group = ALL_SEVENTHS.filter(t =>
       t.t1 === t1 && t.t2.cx <= f.thirdCx && t.t3.cx <= f.thirdCx &&
       t.fifthCx <= f.fifthCx && t.seventhCx <= f.seventhCx &&
       (!survivors || (survivors.has(t.t2) && survivors.has(t.t3)))
-    ).sort((a,b) => (a.t2.cx + a.t3.cx) - (b.t2.cx + b.t3.cx) || a.t2.cx - b.t2.cx);
+    );
+    group.sort((a,b) => (a.t2.cx+a.t3.cx)-(b.t2.cx+b.t3.cx) || a.t2.cx-b.t2.cx);
     if (!group.length) continue;
 
     html.push(`<div class="group-header">── Bottom third: ${fr(t1.ratio)} &nbsp;(${t1.name}, ${t1.cents.toFixed(2)}c) ──</div>`);
-
-    for (const t of group) {
-      const notes  = `<span class="col-notes seventh-notes"><span class="n">1/1</span><span class="n">${fr(t.t1.ratio)}</span><span class="n">${fr(t.fifth)}</span><span class="n">${fr(t.seventh)}</span></span>`;
-      const thirds = `<span class="col-thirds seventh-thirds"><span class="r">${fr(t.t1.ratio)}</span><span class="r">${fr(t.t2.ratio)}</span><span class="r">${fr(t.t3.ratio)}</span></span>`;
-      const cents  = `<span class="col-cents seventh-cents"><span class="c">0c</span><span class="c">${t.t1.cents.toFixed(2)}c</span><span class="c">${t.fifthCents.toFixed(2)}c</span><span class="c">${t.seventhCents.toFixed(2)}c</span></span>`;
-      const intStr = intChord([[1,1], t.t1.ratio, t.fifth, t.seventh]);
-      const s1 = stepMap ? stepMap.get(t.t1) : 0;
-      const s2 = stepMap ? stepMap.get(t.t2) : 0;
-      const s3 = stepMap ? stepMap.get(t.t3) : 0;
-      const edoSteps = [0, s1, s1+s2, s1+s2+s3];
-      const edoCentsArr = edoSteps.map(s => (s * edoState.stepSize).toFixed(1) + 'c');
-      const stepsCol = stepMap
-        ? `<span class="sep">|</span><span class="col-steps">${edoSteps.join(' ')}</span><span class="sep">|</span><span class="col-edo-cents">${edoCentsArr.join('  ')}</span>`
-        : ``;
-      html.push(makeRow(`0,${t.t1.cents},${t.fifthCents},${t.seventhCents}`, edoSteps.join(','), edo, notes, thirds, cents, intStr, stepsCol));
-      count++;
-    }
+    for (const t of group) { html.push(seventhRowHtml(t, stepMap, edoState, 0)); count++; }
   }
 
   document.getElementById('stats').textContent =
@@ -542,36 +731,109 @@ function renderSevenths(f, edoState) {
   return html;
 }
 
-/* ── Render ── */
+/* ══════════════════════════════════════════════
+   RENDER SAVED TAB
+══════════════════════════════════════════════ */
+function savedRowHtml(s) {
+  const edo      = s.edo || 0;
+  const stepSize = edo ? 1200 / edo : 0;
+  const centsVals = s.centsKey.split(',').map(Number);
+  const isSeventh = s.type === 'seventh' || centsVals.length === 4;
+
+  // Reconstruct display spans from stored data
+  const noteLabels = s.label ? s.label.split(' ') : centsVals.map((c,i) => i===0 ? '1/1' : c.toFixed(2)+'c');
+  const notesSpans = noteLabels.map(n => `<span class="n">${n}</span>`).join('');
+  const notesClass = isSeventh ? 'seventh-notes' : 'triad-notes';
+  const notes = `<span class="col-notes ${notesClass}">${notesSpans}</span>`;
+
+  const thirdsClass = isSeventh ? 'seventh-thirds' : 'triad-thirds';
+  let thirdsHtml = '';
+  if (s.ratios) {
+    thirdsHtml = s.ratios.split(',').map(r => `<span class="r">${r}</span>`).join('');
+  }
+  const thirds = thirdsHtml ? `<span class="col-thirds ${thirdsClass}">${thirdsHtml}</span>` : '';
+
+  const centsClass = isSeventh ? 'seventh-cents' : 'triad-cents';
+  const centsSpans = centsVals.map(c => `<span class="c">${c === 0 ? '0' : c.toFixed(2)}c</span>`).join('');
+  const cents = `<span class="col-cents ${centsClass}">${centsSpans}</span>`;
+
+  const intStr = s.intStr || '';
+
+  const edoStepsArr = s.edoSteps ? s.edoSteps.split(',').map(Number) : [];
+  const sc = (edo && edoStepsArr.length)
+    ? stepsColHtml(edoStepsArr, stepSize)
+    : '';
+
+  const saved = isSaved(s.centsKey, edo);
+  return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${s.centsKey}" data-edo-steps="${s.edoSteps||''}" data-edo="${edo}" data-label="${s.label||''}" data-ratios="${s.ratios||''}" data-int="${intStr}" data-type="${s.type||'triad'}">`
+    + `<span class="col-save"><button class="save-btn${saved ? ' saved' : ''}" title="${saved ? 'Unsave' : 'Save'}">${saved ? '★' : '☆'}</button></span>`
+    + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
+    + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;
+}
+
+function renderSaved() {
+  document.getElementById('stats').textContent = `${savedChords.length} saved chord${savedChords.length !== 1 ? 's' : ''}`;
+  if (!savedChords.length) return [`<div class="empty">No saved chords yet. Click ☆ on any chord to save it.</div>`];
+
+  const html = [];
+  // Group by EDO
+  const byEdo = new Map();
+  for (const s of savedChords) {
+    if (!byEdo.has(s.edo)) byEdo.set(s.edo, []);
+    byEdo.get(s.edo).push(s);
+  }
+
+  // Sort EDOs: 0 (no EDO) first, then numerically
+  const edoKeys = [...byEdo.keys()].sort((a,b) => a - b);
+
+  for (const edo of edoKeys) {
+    const group = byEdo.get(edo);
+    const edoLabel = edo ? `${edo}edo` : 'No EDO';
+    html.push(`<div class="saved-edo-group"><div class="saved-edo-header">${edoLabel} — ${group.length} chord${group.length!==1?'s':''}</div>`);
+
+    const hasEdo = !!edo;
+    const stepsHeader = hasEdo
+      ? `<span class="sep"> </span><span style="min-width:80px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span>`
+      : '';
+    const isSevGroup = group.some(s => s.type === 'seventh' || (s.centsKey||'').split(',').length === 4);
+    html.push(
+      `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
+      `<span style="width:${isSevGroup?'280':'210'}px;flex-shrink:0">chord</span><span class="sep"> </span>` +
+      `<span style="width:${isSevGroup?'200':'130'}px;flex-shrink:0">thirds</span><span class="sep"> </span>` +
+      `<span style="width:${isSevGroup?'290':'220'}px;flex-shrink:0">cents</span><span class="sep"> </span>` +
+      `<span style="min-width:${isSevGroup?'150':'120'}px;flex-shrink:0">integer</span>${stepsHeader}</div>`
+    );
+
+    for (const s of group) html.push(savedRowHtml(s));
+    html.push(`</div>`);
+  }
+
+  return html;
+}
+
+/* ══════════════════════════════════════════════
+   MAIN RENDER
+══════════════════════════════════════════════ */
 function render() {
   const f        = getFilters();
   const edoState = getEdoState();
-  renderEdoSummary(edoState);
-  const html     = mode === 'triads' ? renderTriads(f, edoState) : renderSevenths(f, edoState);
-  if (html.length <= 1) html.push('<div class="empty">No chords match the current filters.</div>');
-  document.getElementById('chordList').innerHTML = html.join('');
+  renderEdoSummary(mode === 'saved' ? null : edoState);
 
-  document.querySelectorAll('.chord-row').forEach(row => {
-    row.addEventListener('click', () => {
-      const useEdo = playEdoMode && row.dataset.edo && +row.dataset.edo > 0;
-      let centsArray;
-      if (useEdo) {
-        const edo   = +row.dataset.edo;
-        const steps = row.dataset.edoSteps.split(',').map(Number);
-        centsArray  = stepsToEdoCents(steps, edo);
-        row.classList.add('playing-edo');
-        setTimeout(() => row.classList.remove('playing-edo'), 5100);
-      } else {
-        centsArray = row.dataset.cents.split(',').map(Number);
-        row.classList.add('playing-ji');
-        setTimeout(() => row.classList.remove('playing-ji'), 5100);
-      }
-      playChord(centsArray);
-    });
-  });
+  let html;
+  if      (mode === 'triads')   html = renderTriads(f, edoState);
+  else if (mode === 'sevenths') html = renderSevenths(f, edoState);
+  else                          html = renderSaved();
+
+  if (html.length <= 1 && mode !== 'saved') html.push('<div class="empty">No chords match the current filters.</div>');
+
+  const container = document.getElementById('chordList');
+  container.innerHTML = html.join('');
+  attachRowListeners(container);
 }
 
-/* ── Sliders setup ── */
+/* ══════════════════════════════════════════════
+   SLIDERS
+══════════════════════════════════════════════ */
 function setupSlider(id, valId, max) {
   const el  = document.getElementById(id);
   const val = document.getElementById(valId);
@@ -586,6 +848,11 @@ setupSlider('seventhCx', 'seventhCxVal', 100000);
 document.getElementById('edoInput').addEventListener('change',    () => { if (edoActive) render(); });
 document.getElementById('edoMaxError').addEventListener('change', () => { if (edoActive) render(); });
 
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+loadSaved();
+updateSavedCount();
 setMode('triads');
 </script>
 </body>

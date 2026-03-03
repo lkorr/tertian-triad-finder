@@ -87,7 +87,7 @@
   /* ── Chord row ── */
   .chord-row {
     display: flex; align-items: baseline; padding: 2px 6px 2px 0;
-    border-bottom: 1px solid #222; cursor: pointer; user-select: none;
+    border-bottom: 1px solid #222; cursor: pointer;
   }
   .chord-row:nth-child(even) { background: #1e1e1e; }
   .chord-row:hover           { background: #212130; }
@@ -577,9 +577,12 @@ function stepsToEdoCents(steps, edo) { return steps.map(s => s * (1200/edo)); }
 
 function attachRowListeners(container) {
   container.querySelectorAll('.chord-row').forEach(row => {
-    // play on row click (but not on save button)
+    // play on click, but not if the user is drag-selecting text
+    let mouseDownX, mouseDownY;
+    row.addEventListener('mousedown', e => { mouseDownX = e.clientX; mouseDownY = e.clientY; });
     row.addEventListener('click', e => {
       if (e.target.closest('.save-btn')) return;
+      if (Math.abs(e.clientX - mouseDownX) > 4 || Math.abs(e.clientY - mouseDownY) > 4) return;
       const useEdo  = playEdoMode && row.dataset.edo && +row.dataset.edo > 0;
       let centsArr;
       if (useEdo) {

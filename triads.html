@@ -126,12 +126,12 @@
   .col-edo-cents { flex-shrink: 0; color: #b8d; min-width: 110px; }
   .sep { color: #444; padding: 0 8px; flex-shrink: 0; }
 
-  .triad-notes   { width: 210px; }
-  .triad-thirds  { width: 130px; }
-  .triad-cents   { width: 220px; }
-  .seventh-notes  { width: 280px; }
-  .seventh-thirds { width: 200px; }
-  .seventh-cents  { width: 290px; }
+  .triad-notes   { width: 226px; }
+  .triad-thirds  { width: 146px; }
+  .triad-cents   { width: 236px; }
+  .seventh-notes  { width: 304px; }
+  .seventh-thirds { width: 224px; }
+  .seventh-cents  { width: 314px; }
 
   .n, .c, .r { display: inline-block; }
   .chord-row .col-save { user-select: none; }
@@ -643,9 +643,9 @@ function chordCopyText(noteRatios, ratios, centsKey, intStr, edo, edoSteps, step
 
 /* ── Triad row HTML ── */
 function triadRowHtml(t, stepMap, edoState, savedEdoNum) {
-  const notes  = `<span class="col-notes triad-notes"><span class="n">1/1</span><span class="n">${fr(t.t1.ratio)}</span><span class="n">${fr(t.fifth)}</span></span>`;
-  const thirds = `<span class="col-thirds triad-thirds"><span class="r">${fr(t.t1.ratio)}</span><span class="r">${fr(t.t2.ratio)}</span></span>`;
-  const cents  = `<span class="col-cents triad-cents"><span class="c">0c</span><span class="c">${t.t1.cents.toFixed(2)}c</span><span class="c">${t.fifthCents.toFixed(2)}c</span></span>`;
+  const notes  = `<span class="col-notes triad-notes"><span class="n">1/1</span> <span class="n">${fr(t.t1.ratio)}</span> <span class="n">${fr(t.fifth)}</span></span>`;
+  const thirds = `<span class="col-thirds triad-thirds"><span class="r">${fr(t.t1.ratio)}</span> <span class="r">${fr(t.t2.ratio)}</span></span>`;
+  const cents  = `<span class="col-cents triad-cents"><span class="c">0c</span> <span class="c">${t.t1.cents.toFixed(2)}c</span> <span class="c">${t.fifthCents.toFixed(2)}c</span></span>`;
   const intStr = intChord([[1,1], t.t1.ratio, t.fifth]);
   const centsKey = `0,${t.t1.cents},${t.fifthCents}`;
   const label    = `1/1 ${fr(t.t1.ratio)} ${fr(t.fifth)}`;
@@ -667,9 +667,9 @@ function triadRowHtml(t, stepMap, edoState, savedEdoNum) {
 
 /* ── Seventh row HTML ── */
 function seventhRowHtml(t, stepMap, edoState, savedEdoNum) {
-  const notes  = `<span class="col-notes seventh-notes"><span class="n">1/1</span><span class="n">${fr(t.t1.ratio)}</span><span class="n">${fr(t.fifth)}</span><span class="n">${fr(t.seventh)}</span></span>`;
-  const thirds = `<span class="col-thirds seventh-thirds"><span class="r">${fr(t.t1.ratio)}</span><span class="r">${fr(t.t2.ratio)}</span><span class="r">${fr(t.t3.ratio)}</span></span>`;
-  const cents  = `<span class="col-cents seventh-cents"><span class="c">0c</span><span class="c">${t.t1.cents.toFixed(2)}c</span><span class="c">${t.fifthCents.toFixed(2)}c</span><span class="c">${t.seventhCents.toFixed(2)}c</span></span>`;
+  const notes  = `<span class="col-notes seventh-notes"><span class="n">1/1</span> <span class="n">${fr(t.t1.ratio)}</span> <span class="n">${fr(t.fifth)}</span> <span class="n">${fr(t.seventh)}</span></span>`;
+  const thirds = `<span class="col-thirds seventh-thirds"><span class="r">${fr(t.t1.ratio)}</span> <span class="r">${fr(t.t2.ratio)}</span> <span class="r">${fr(t.t3.ratio)}</span></span>`;
+  const cents  = `<span class="col-cents seventh-cents"><span class="c">0c</span> <span class="c">${t.t1.cents.toFixed(2)}c</span> <span class="c">${t.fifthCents.toFixed(2)}c</span> <span class="c">${t.seventhCents.toFixed(2)}c</span></span>`;
   const intStr = intChord([[1,1], t.t1.ratio, t.fifth, t.seventh]);
   const centsKey = `0,${t.t1.cents},${t.fifthCents},${t.seventhCents}`;
   const label    = `1/1 ${fr(t.t1.ratio)} ${fr(t.fifth)} ${fr(t.seventh)}`;
@@ -830,19 +830,19 @@ function savedRowHtml(s) {
   // Notes column: chord tones (1/1, t1, fifth[, seventh])
   const notesClass = isSeventh ? 'seventh-notes' : 'triad-notes';
   const noteList   = s.noteRatios ? s.noteRatios.split(',') : (s.label ? s.label.split(' ') : []);
-  const notesSpans = noteList.map(n => `<span class="n">${n}</span>`).join('');
+  const notesSpans = noteList.map((n, i, a) => `<span class="n">${n}</span>${i < a.length-1 ? ' ' : ''}`).join('');
   const notes = `<span class="col-notes ${notesClass}">${notesSpans}</span>`;
 
   // Thirds column: stacked interval thirds
   const thirdsClass = isSeventh ? 'seventh-thirds' : 'triad-thirds';
   const thirdsList  = s.ratios ? s.ratios.split(',') : [];
   const thirds = thirdsList.length
-    ? `<span class="col-thirds ${thirdsClass}">${thirdsList.map(r => `<span class="r">${r}</span>`).join('')}</span>`
+    ? `<span class="col-thirds ${thirdsClass}">${thirdsList.map((r, i, a) => `<span class="r">${r}</span>${i < a.length-1 ? ' ' : ''}`).join('')}</span>`
     : '';
 
   // Cents column
   const centsClass = isSeventh ? 'seventh-cents' : 'triad-cents';
-  const centsSpans = centsVals.map(c => `<span class="c">${c === 0 ? '0' : c.toFixed(2)}c</span>`).join('');
+  const centsSpans = centsVals.map((c, i, a) => `<span class="c">${c === 0 ? '0' : c.toFixed(2)}c</span>${i < a.length-1 ? ' ' : ''}`).join('');
   const cents = `<span class="col-cents ${centsClass}">${centsSpans}</span>`;
 
   const intStr = s.intStr || '';

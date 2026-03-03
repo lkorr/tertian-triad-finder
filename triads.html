@@ -270,19 +270,11 @@
 
 <div id="edoSummary" style="display:none"></div>
 
-<div id="importBanner">
-  <div class="import-title" id="importTitle"></div>
-  <div id="importRows"></div>
-  <div class="import-actions">
-    <button class="import-accept" onclick="importSharedChords()">Import all</button>
-    <button class="import-dismiss" onclick="dismissImport()">Dismiss</button>
-  </div>
-</div>
-
 <div class="tabs">
   <button class="tab active" id="tabTriads"   onclick="setMode('triads')">Triads</button>
   <button class="tab"        id="tabSevenths" onclick="setMode('sevenths')">Seventh Chords</button>
   <button class="tab"        id="tabSaved"    onclick="setMode('saved')">Saved <span class="tab-saved-count" id="savedCount">0</span></button>
+  <button class="tab"        id="tabShared"   onclick="setMode('shared')" style="display:none;color:#afa;border-color:#4a6a3a">Shared</button>
 </div>
 
 <div id="chordList" class="chord-list"></div>
@@ -612,6 +604,7 @@ function setMode(m) {
   document.getElementById('tabTriads').classList.toggle('active',   m==='triads');
   document.getElementById('tabSevenths').classList.toggle('active', m==='sevenths');
   document.getElementById('tabSaved').classList.toggle('active',    m==='saved');
+  document.getElementById('tabShared').classList.toggle('active',   m==='shared');
   document.getElementById('seventhCxGroup').style.display = m==='sevenths' ? '' : 'none';
   render();
 }
@@ -987,9 +980,10 @@ function render() {
   let html;
   if      (mode === 'triads')   html = renderTriads(f, edoState);
   else if (mode === 'sevenths') html = renderSevenths(f, edoState);
+  else if (mode === 'shared')   html = renderShared();
   else                          html = renderSaved();
 
-  if (html.length <= 1 && mode !== 'saved') html.push('<div class="empty">No chords match the current filters.</div>');
+  if (html.length <= 1 && mode !== 'saved' && mode !== 'shared') html.push('<div class="empty">No chords match the current filters.</div>');
 
   const container = document.getElementById('chordList');
   container.innerHTML = html.join('');
@@ -1052,31 +1046,66 @@ function loadShareFromHash() {
     sharedChords = JSON.parse(atob(hash.slice(7)));
   } catch { return; }
   if (!sharedChords.length) return;
+  document.getElementById('tabShared').style.display = '';
+  setMode('shared');
+}
+
+function renderShared() {
+  if (!sharedChords.length) return [`<div class="empty">No shared chords.</div>`];
 
   const edo = sharedChords[0].edo;
   const edoLabel = edo ? `${edo}edo` : 'No EDO';
   const newCount = sharedChords.filter(s => !isSaved(s.centsKey, s.edo)).length;
 
-  document.getElementById('importTitle').textContent =
-    `Shared: ${sharedChords.length} chord${sharedChords.length!==1?'s':''} (${edoLabel}) — ${newCount} new to you`;
-  document.getElementById('importRows').textContent = sharedChords
-    .map(s => s.label || s.centsKey).join('  ·  ');
-  document.getElementById('importBanner').style.display = '';
-  setMode('saved');
+  const html = [];
+  html.push(
+    `<div class="saved-edo-group">` +
+    `<div class="saved-edo-header">${edoLabel} — ${sharedChords.length} chord${sharedChords.length!==1?'s':''} shared` +
+    ` &nbsp;<button class="share-btn" style="float:right" onclick="importSharedChords()">Save all (${newCount} new)</button></div>`
+  );
+
+  const hasEdo = !!edo;
+  const stepsHeader = hasEdo
+    ? `<span class="sep"> </span><span style="min-width:80px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span>`
+    : '';
+  const triads   = sharedChords.filter(s => s.type !== 'seventh' && (s.centsKey||'').split(',').length !== 4);
+  const sevenths = sharedChords.filter(s => s.type === 'seventh' || (s.centsKey||'').split(',').length === 4);
+
+  if (triads.length) {
+    html.push(
+      `<div class="saved-type-header">Triads</div>` +
+      `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
+      `<span style="width:210px;flex-shrink:0">chord (1/1 · 3rd · 5th)</span><span class="sep"> </span>` +
+      `<span style="width:130px;flex-shrink:0">thirds (lower · upper)</span><span class="sep"> </span>` +
+      `<span style="width:220px;flex-shrink:0">cents (0 · mid · top)</span><span class="sep"> </span>` +
+      `<span style="min-width:120px;flex-shrink:0">integer</span>${stepsHeader}</div>`
+    );
+    for (const s of triads) html.push(savedRowHtml(s));
+  }
+  if (sevenths.length) {
+    const sevStepsHeader = hasEdo
+      ? `<span class="sep"> </span><span style="min-width:100px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span>`
+      : '';
+    html.push(
+      `<div class="saved-type-header">Seventh chords</div>` +
+      `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
+      `<span style="width:280px;flex-shrink:0">chord (1/1 · 3rd · 5th · 7th)</span><span class="sep"> </span>` +
+      `<span style="width:200px;flex-shrink:0">thirds (lower · middle · upper)</span><span class="sep"> </span>` +
+      `<span style="width:290px;flex-shrink:0">cents (0 · mid · 5th · top)</span><span class="sep"> </span>` +
+      `<span style="min-width:150px;flex-shrink:0">integer</span>${sevStepsHeader}</div>`
+    );
+    for (const s of sevenths) html.push(savedRowHtml(s));
+  }
+
+  html.push(`</div>`);
+  return html;
 }
 
 function importSharedChords() {
   for (const s of sharedChords) {
     if (!isSaved(s.centsKey, s.edo)) saveChord(s);
   }
-  dismissImport();
   render();
-}
-
-function dismissImport() {
-  sharedChords = [];
-  document.getElementById('importBanner').style.display = 'none';
-  history.replaceState(null, '', location.pathname + location.search);
 }
 
 /* ══════════════════════════════════════════════
@@ -1151,8 +1180,8 @@ loadSaved();
 updateSavedCount();
 document.getElementById('thirdsInput').value = thirdsToInputValue();
 document.getElementById('thirdsInput').addEventListener('input', onThirdsInput);
+setMode('triads');
 loadShareFromHash();
-if (!location.hash.startsWith('#share=')) setMode('triads');
 </script>
 </body>
 </html>

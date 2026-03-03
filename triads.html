@@ -931,11 +931,24 @@ document.getElementById('chordList').addEventListener('copy', e => {
   if (!sel || sel.isCollapsed) return;
   const range = sel.getRangeAt(0);
 
-  // Collect all chord-rows that overlap the selection
+  // Find chord rows that are fully covered by the selection
   const rows = document.getElementById('chordList').querySelectorAll('.chord-row');
-  const lines = [];
+  const fullRows = [];
   for (const row of rows) {
     if (!range.intersectsNode(row)) continue;
+    // Check if the entire row is contained in the selection
+    const rowRange = document.createRange();
+    rowRange.selectNode(row);
+    const startBeforeRow = range.compareBoundaryPoints(Range.START_TO_START, rowRange) <= 0;
+    const endAfterRow    = range.compareBoundaryPoints(Range.END_TO_END,     rowRange) >= 0;
+    if (startBeforeRow && endAfterRow) fullRows.push(row);
+  }
+
+  // If no full rows are covered, let the browser copy whatever is selected normally
+  if (!fullRows.length) return;
+
+  e.preventDefault();
+  const lines = fullRows.map(row => {
     const r      = row.dataset;
     const notes  = r.noteRatios ? r.noteRatios.split(',').join(' ') : (r.label || '');
     const thirds = r.ratios ? r.ratios.split(',').join(' ') : '';
@@ -949,11 +962,8 @@ document.getElementById('chordList').addEventListener('copy', e => {
       parts.push(steps.join(' '));
       parts.push(steps.map(s => (s * stepSize).toFixed(1) + 'c').join(' '));
     }
-    lines.push(parts.join(' | '));
-  }
-
-  if (!lines.length) return;
-  e.preventDefault();
+    return parts.join(' | ');
+  });
   e.clipboardData.setData('text/plain', lines.join('\n'));
 });
 

@@ -1029,7 +1029,9 @@ document.getElementById('chordList').addEventListener('copy', e => {
 function shareGroup(edo) {
   const group = savedChords.filter(s => s.edo === edo);
   if (!group.length) return;
-  const encoded = btoa(JSON.stringify(group));
+  const chordParts = group.map(s => s.noteRatios + '|' + (s.edoSteps || ''));
+  const compact = edo + ':' + chordParts.join(';');
+  const encoded = btoa(compact);
   const url = location.href.split('#')[0] + '#share=' + encoded;
   navigator.clipboard.writeText(url).then(() => {
     const btn = document.getElementById(`share-${edo}`);
@@ -1046,7 +1048,39 @@ function loadShareFromHash() {
   const hash = location.hash;
   if (!hash.startsWith('#share=')) return;
   try {
-    sharedChords = JSON.parse(atob(hash.slice(7)));
+    const compact = atob(hash.slice(7));
+    const colon = compact.indexOf(':');
+    const edo = parseInt(compact.slice(0, colon), 10);
+    const chordParts = compact.slice(colon + 1).split(';').filter(Boolean);
+    sharedChords = chordParts.map(part => {
+      const [noteRatiosStr, edoStepsStr] = part.split('|');
+      const noteRatios = noteRatiosStr;
+      const notes = noteRatiosStr.split(',');
+      // Derive ratios (stacked intervals between adjacent notes)
+      const ratioList = [];
+      for (let i = 1; i < notes.length; i++) {
+        const [pn, pd] = notes[i-1].split('/').map(Number);
+        const [cn, cd] = notes[i].split('/').map(Number);
+        const n = cn * pd, d = cd * pn, g = gcd(n, d);
+        ratioList.push((n/g) + '/' + (d/g));
+      }
+      // Derive centsKey from noteRatios
+      const centsKey = notes.map(r => {
+        const [n, d] = r.split('/').map(Number);
+        return +(Math.log2(n/d) * 1200).toFixed(10);
+      }).join(',');
+      const isSeventh = notes.length === 4;
+      // Derive intStr
+      const ratioArrays = notes.map(r => r.split('/').map(Number));
+      const intStr = intChord(ratioArrays);
+      return {
+        edo, edoSteps: edoStepsStr || '',
+        noteRatios, ratios: ratioList.join(','),
+        centsKey, intStr,
+        label: notes.join(' '),
+        type: isSeventh ? 'seventh' : 'triad',
+      };
+    });
   } catch { return; }
   if (!sharedChords.length) return;
   document.getElementById('tabShared').style.display = '';

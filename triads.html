@@ -248,7 +248,7 @@
       <select id="timbre">
         <option value="sine">Sine</option>
         <option value="triangle">Triangle</option>
-        <option value="sawtooth">Sawtooth</option>
+        <option value="sawtooth" selected>Sawtooth</option>
         <option value="square">Square</option>
       </select>
     </div>
@@ -441,14 +441,17 @@ function toggleEdo() {
   render();
 }
 
-function togglePlayEdo() {
-  playEdoMode = !playEdoMode;
+function setPlayEdo(on) {
+  playEdoMode = on;
   const btn  = document.getElementById('playEdoBtn');
   const hint = document.getElementById('playModeHint');
-  btn.classList.toggle('active-edo', playEdoMode);
-  btn.textContent  = playEdoMode ? 'Playing in EDO' : 'Playing in JI';
-  hint.textContent = playEdoMode ? 'currently playing in EDO temperament' : 'currently playing in just intonation';
+  btn.classList.toggle('active-edo', on);
+  btn.textContent  = on ? 'Playing in EDO' : 'Playing in JI';
+  hint.textContent = on ? 'currently playing in EDO temperament' : 'currently playing in just intonation';
+  localStorage.setItem('ji_play_edo', on ? '1' : '0');
 }
+
+function togglePlayEdo() { setPlayEdo(!playEdoMode); }
 
 function getEdoState() {
   if (!edoActive) return null;
@@ -1047,6 +1050,8 @@ function loadShareFromHash() {
   } catch { return; }
   if (!sharedChords.length) return;
   document.getElementById('tabShared').style.display = '';
+  const sharedEdo = sharedChords[0].edo;
+  if (sharedEdo) setPlayEdo(true);
   setMode('shared');
 }
 
@@ -1180,6 +1185,15 @@ loadSaved();
 updateSavedCount();
 document.getElementById('thirdsInput').value = thirdsToInputValue();
 document.getElementById('thirdsInput').addEventListener('input', onThirdsInput);
+
+// Restore persisted settings
+const savedTimbre = localStorage.getItem('ji_timbre');
+if (savedTimbre) document.getElementById('timbre').value = savedTimbre;
+document.getElementById('timbre').addEventListener('change', () => {
+  localStorage.setItem('ji_timbre', document.getElementById('timbre').value);
+});
+if (localStorage.getItem('ji_play_edo') === '1') setPlayEdo(true);
+
 setMode('triads');
 loadShareFromHash();
 </script>

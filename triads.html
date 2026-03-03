@@ -215,9 +215,9 @@
       </select>
     </div>
     <div class="row" style="margin-top:4px">
-      <button id="playEdoBtn" onclick="togglePlayEdo()">Play EDO</button>
+      <button id="playEdoBtn" onclick="togglePlayEdo()">Playing in JI</button>
     </div>
-    <div class="hint">Click a row to play · Play EDO uses quantized pitches</div>
+    <div class="hint">Click a row to play · <span id="playModeHint">currently playing in just intonation</span></div>
   </div>
   <div class="control-group" style="margin-top:auto">
     <div class="stats" id="stats"></div>
@@ -400,9 +400,11 @@ function toggleEdo() {
 
 function togglePlayEdo() {
   playEdoMode = !playEdoMode;
-  const btn = document.getElementById('playEdoBtn');
+  const btn  = document.getElementById('playEdoBtn');
+  const hint = document.getElementById('playModeHint');
   btn.classList.toggle('active-edo', playEdoMode);
-  btn.textContent = playEdoMode ? 'Play JI' : 'Play EDO';
+  btn.textContent  = playEdoMode ? 'Playing in EDO' : 'Playing in JI';
+  hint.textContent = playEdoMode ? 'currently playing in EDO temperament' : 'currently playing in just intonation';
 }
 
 function getEdoState() {

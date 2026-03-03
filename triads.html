@@ -124,6 +124,7 @@
   .col-int       { flex-shrink: 0; color: #d9f; min-width: 120px; }
   .col-steps     { flex-shrink: 0; color: #fa8; min-width: 80px; }
   .col-edo-cents { flex-shrink: 0; color: #b8d; min-width: 110px; }
+  .col-error     { flex-shrink: 0; color: #f86; min-width: 70px; }
   .sep { color: #444; padding: 0 8px; flex-shrink: 0; }
 
   .triad-notes   { width: 226px; }
@@ -674,10 +675,15 @@ function saveBtn(centsKey, edo) {
   return `<span class="col-save"><button class="save-btn${saved ? ' saved' : ''}" title="${saved ? 'Unsave' : 'Save'}">${saved ? '★' : '☆'}</button></span>`;
 }
 
-function stepsColHtml(edoSteps, stepSize) {
+function stepsColHtml(edoSteps, stepSize, jiCents) {
   const edoCentsArr = edoSteps.map(s => (s * stepSize).toFixed(1) + 'c');
+  const totalError  = jiCents
+    ? jiCents.slice(1).reduce((sum, jc, i) => sum + Math.abs(edoSteps[i+1] * stepSize - jc), 0)
+    : null;
+  const errStr = totalError !== null ? totalError.toFixed(2) + 'c' : '';
   return `<span class="sep">|</span><span class="col-steps">${edoSteps.join(' ')}</span>`
-       + `<span class="sep">|</span><span class="col-edo-cents">${edoCentsArr.join('  ')}</span>`;
+       + `<span class="sep">|</span><span class="col-edo-cents">${edoCentsArr.join('  ')}</span>`
+       + `<span class="sep">|</span><span class="col-error">${errStr}</span>`;
 }
 
 function chordCopyText(noteRatios, ratios, centsKey, intStr, edo, edoSteps, stepSize) {
@@ -704,7 +710,7 @@ function triadRowHtml(t, stepMap, edoState, savedEdoNum) {
   const s1       = stepMap ? (stepMap.get(t.t1) || 0) : 0;
   const s2       = stepMap ? (stepMap.get(t.t2) || 0) : 0;
   const edoSteps = [0, s1, s1+s2];
-  const sc       = stepMap ? stepsColHtml(edoSteps, edoState.stepSize) : '';
+  const sc       = stepMap ? stepsColHtml(edoSteps, edoState.stepSize, [0, t.t1.cents, t.fifthCents]) : '';
   const saved    = isSaved(centsKey, edo);
   const ratios     = [fr(t.t1.ratio), fr(t.t2.ratio)].join(',');
   const noteRatios = ['1/1', fr(t.t1.ratio), fr(t.fifth)].join(',');
@@ -729,7 +735,7 @@ function seventhRowHtml(t, stepMap, edoState, savedEdoNum) {
   const s2 = stepMap ? (stepMap.get(t.t2)||0) : 0;
   const s3 = stepMap ? (stepMap.get(t.t3)||0) : 0;
   const edoSteps = [0, s1, s1+s2, s1+s2+s3];
-  const sc = stepMap ? stepsColHtml(edoSteps, edoState.stepSize) : '';
+  const sc = stepMap ? stepsColHtml(edoSteps, edoState.stepSize, [0, t.t1.cents, t.fifthCents, t.seventhCents]) : '';
   const saved = isSaved(centsKey, edo);
   const ratios     = [fr(t.t1.ratio), fr(t.t2.ratio), fr(t.t3.ratio)].join(',');
   const noteRatios = ['1/1', fr(t.t1.ratio), fr(t.fifth), fr(t.seventh)].join(',');
@@ -797,7 +803,7 @@ function renderTriads(f, edoState) {
   let count = 0;
 
   const stepsHeader = stepMap
-    ? `<span class="sep"> </span>${colLabel('steps','edo steps','EDO step value')}<span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span>`
+    ? `<span class="sep"> </span>${colLabel('steps','edo steps','EDO step value')}<span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span><span class="sep"> </span><span style="min-width:70px;flex-shrink:0;color:#f86">total err</span>`
     : '';
   html.push(
     `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
@@ -840,7 +846,7 @@ function renderSevenths(f, edoState) {
   let count = 0;
 
   const stepsHeader = stepMap
-    ? `<span class="sep"> </span>${colLabel('steps','edo steps','EDO step value')}<span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span>`
+    ? `<span class="sep"> </span>${colLabel('steps','edo steps','EDO step value')}<span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span><span class="sep"> </span><span style="min-width:70px;flex-shrink:0;color:#f86">total err</span>`
     : '';
   html.push(
     `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +

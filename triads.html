@@ -135,6 +135,8 @@
 
   .n, .c, .r { display: inline-block; }
   .chord-row .col-save { user-select: none; }
+  .chord-visual { display: contents; }
+  .chord-copy { display: none; }
   .triad-notes   .n { width: 68px; }
   .triad-thirds  .r { width: 62px; }
   .triad-cents   .c { width: 72px; }
@@ -627,6 +629,18 @@ function stepsColHtml(edoSteps, stepSize) {
        + `<span class="sep">|</span><span class="col-edo-cents">${edoCentsArr.join('  ')}</span>`;
 }
 
+function chordCopyText(noteRatios, ratios, centsKey, intStr, edo, edoSteps, stepSize) {
+  const notes  = noteRatios.split(',').join(' ');
+  const thirds = ratios.split(',').join(' ');
+  const cents  = centsKey.split(',').map(c => (+c===0?'0':(+c).toFixed(2))+'c').join(' ');
+  const parts  = [notes, thirds, cents, intStr];
+  if (edo && edoSteps.length) {
+    parts.push(edoSteps.join(' '));
+    parts.push(edoSteps.map(s => (s*stepSize).toFixed(1)+'c').join(' '));
+  }
+  return parts.join(' | ');
+}
+
 /* ── Triad row HTML ── */
 function triadRowHtml(t, stepMap, edoState, savedEdoNum) {
   const notes  = `<span class="col-notes triad-notes"><span class="n">1/1</span><span class="n">${fr(t.t1.ratio)}</span><span class="n">${fr(t.fifth)}</span></span>`;
@@ -643,10 +657,12 @@ function triadRowHtml(t, stepMap, edoState, savedEdoNum) {
   const saved    = isSaved(centsKey, edo);
   const ratios     = [fr(t.t1.ratio), fr(t.t2.ratio)].join(',');
   const noteRatios = ['1/1', fr(t.t1.ratio), fr(t.fifth)].join(',');
+  const copyText   = chordCopyText(noteRatios, ratios, centsKey, intStr, edo, edoSteps, stepMap ? edoState.stepSize : 0);
   return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${centsKey}" data-edo-steps="${edoSteps.join(',')}" data-edo="${edo}" data-label="${label}" data-ratios="${ratios}" data-note-ratios="${noteRatios}" data-int="${intStr}" data-type="triad">`
-    + saveBtn(centsKey, edo)
+    + `<span class="chord-copy">${copyText}</span>`
+    + `<span class="chord-visual">${saveBtn(centsKey, edo)}`
     + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
-    + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;
+    + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</span></div>`;
 }
 
 /* ── Seventh row HTML ── */
@@ -666,10 +682,12 @@ function seventhRowHtml(t, stepMap, edoState, savedEdoNum) {
   const saved = isSaved(centsKey, edo);
   const ratios     = [fr(t.t1.ratio), fr(t.t2.ratio), fr(t.t3.ratio)].join(',');
   const noteRatios = ['1/1', fr(t.t1.ratio), fr(t.fifth), fr(t.seventh)].join(',');
+  const copyText   = chordCopyText(noteRatios, ratios, centsKey, intStr, edo, edoSteps, stepMap ? edoState.stepSize : 0);
   return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${centsKey}" data-edo-steps="${edoSteps.join(',')}" data-edo="${edo}" data-label="${label}" data-ratios="${ratios}" data-note-ratios="${noteRatios}" data-int="${intStr}" data-type="seventh">`
-    + saveBtn(centsKey, edo)
+    + `<span class="chord-copy">${copyText}</span>`
+    + `<span class="chord-visual">${saveBtn(centsKey, edo)}`
     + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
-    + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;
+    + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</span></div>`;
 }
 
 /* ══════════════════════════════════════════════
@@ -832,11 +850,13 @@ function savedRowHtml(s) {
   const edoStepsArr = s.edoSteps ? s.edoSteps.split(',').map(Number) : [];
   const sc = (edo && edoStepsArr.length) ? stepsColHtml(edoStepsArr, stepSize) : '';
 
-  const saved = isSaved(s.centsKey, edo);
+  const saved      = isSaved(s.centsKey, edo);
+  const copyText   = chordCopyText(noteList.join(','), thirdsList.join(','), s.centsKey, intStr, edo, edoStepsArr, stepSize);
   return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${s.centsKey}" data-edo-steps="${s.edoSteps||''}" data-edo="${edo}" data-label="${s.label||''}" data-ratios="${s.ratios||''}" data-note-ratios="${s.noteRatios||''}" data-int="${intStr}" data-type="${s.type||'triad'}">`
-    + `<span class="col-save"><button class="save-btn${saved ? ' saved' : ''}" title="${saved ? 'Unsave' : 'Save'}">${saved ? '★' : '☆'}</button></span>`
+    + `<span class="chord-copy">${copyText}</span>`
+    + `<span class="chord-visual"><span class="col-save"><button class="save-btn${saved ? ' saved' : ''}" title="${saved ? 'Unsave' : 'Save'}">${saved ? '★' : '☆'}</button></span>`
     + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
-    + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;
+    + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</span></div>`;
 }
 
 function renderSaved() {
@@ -926,44 +946,27 @@ function render() {
   });
 }
 
+
 document.getElementById('chordList').addEventListener('copy', e => {
   const sel = window.getSelection();
   if (!sel || sel.isCollapsed) return;
   const range = sel.getRangeAt(0);
 
-  // Find chord rows that are fully covered by the selection
   const rows = document.getElementById('chordList').querySelectorAll('.chord-row');
-  const fullRows = [];
+  const lines = [];
   for (const row of rows) {
     if (!range.intersectsNode(row)) continue;
-    // Check if the entire row is contained in the selection
     const rowRange = document.createRange();
     rowRange.selectNode(row);
-    const startBeforeRow = range.compareBoundaryPoints(Range.START_TO_START, rowRange) <= 0;
-    const endAfterRow    = range.compareBoundaryPoints(Range.END_TO_END,     rowRange) >= 0;
-    if (startBeforeRow && endAfterRow) fullRows.push(row);
+    const fullySelected = range.compareBoundaryPoints(Range.START_TO_START, rowRange) <= 0
+                       && range.compareBoundaryPoints(Range.END_TO_END,     rowRange) >= 0;
+    if (!fullySelected) continue;
+    const copyEl = row.querySelector('.chord-copy');
+    if (copyEl) lines.push(copyEl.textContent);
   }
-
-  // If no full rows are covered, let the browser copy whatever is selected normally
-  if (!fullRows.length) return;
+  if (!lines.length) return;
 
   e.preventDefault();
-  const lines = fullRows.map(row => {
-    const r      = row.dataset;
-    const notes  = r.noteRatios ? r.noteRatios.split(',').join(' ') : (r.label || '');
-    const thirds = r.ratios ? r.ratios.split(',').join(' ') : '';
-    const cents  = r.cents ? r.cents.split(',').map(c => (+c===0?'0':(+c).toFixed(2))+'c').join(' ') : '';
-    const int_   = r.int || '';
-    const parts  = [notes, thirds, cents, int_].filter(Boolean);
-    const edo    = +r.edo || 0;
-    if (edo && r.edoSteps) {
-      const stepSize = 1200 / edo;
-      const steps    = r.edoSteps.split(',').map(Number);
-      parts.push(steps.join(' '));
-      parts.push(steps.map(s => (s * stepSize).toFixed(1) + 'c').join(' '));
-    }
-    return parts.join(' | ');
-  });
   e.clipboardData.setData('text/plain', lines.join('\n'));
 });
 

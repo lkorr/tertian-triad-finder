@@ -163,6 +163,19 @@
   .unsave-btn:hover { color: #d66; }
 
   .empty { color: #555; padding: 20px 10px; }
+
+  /* ── Thirds editor ── */
+  .thirds-editor {
+    background: #252525; border: 1px solid #444; border-radius: 6px;
+    padding: 12px 16px; margin-bottom: 16px;
+  }
+  .thirds-editor label { color: #aaa; font-size: 0.85em; display: block; margin-bottom: 6px; }
+  .thirds-editor input[type=text] {
+    width: 100%; background: #1a1a1a; color: #cda; border: 1px solid #555;
+    padding: 6px 8px; border-radius: 4px; font: inherit; font-size: 0.9em;
+  }
+  .thirds-editor input[type=text]:focus { outline: none; border-color: #6af; }
+  .thirds-editor .thirds-error { color: #f88; font-size: 0.8em; margin-top: 4px; min-height: 1em; }
 </style>
 </head>
 <body>
@@ -227,6 +240,12 @@
   </div>
 </div>
 
+<div class="thirds-editor">
+  <label>Thirds (comma-separated ratios, e.g. <span style="color:#cda">6/5, 5/4, 9/7</span>)</label>
+  <input type="text" id="thirdsInput">
+  <div class="thirds-error" id="thirdsError"></div>
+</div>
+
 <div id="edoSummary" style="display:none"></div>
 
 <div class="tabs">
@@ -241,17 +260,17 @@
 /* ══════════════════════════════════════════════
    DATA
 ══════════════════════════════════════════════ */
-const THIRDS = [
-  { ratio: [15,13], cents: 247.741, cx: 15*13, name: "tridecimal inframinor" },
+let THIRDS = [
+  { ratio: [5,4],   cents: 386.314, cx: 5*4,   name: "major" },
+  { ratio: [6,5],   cents: 315.641, cx: 6*5,   name: "minor" },
   { ratio: [7,6],   cents: 266.871, cx: 7*6,   name: "subminor" },
-  { ratio: [13,11], cents: 289.210, cx: 13*11,  name: "tridecimal minor" },
-  { ratio: [6,5],   cents: 315.641, cx: 6*5,    name: "minor" },
-  { ratio: [11,9],  cents: 347.408, cx: 11*9,   name: "undecimal neutral" },
-  { ratio: [27,22], cents: 354.547, cx: 27*22,  name: "rastmic neutral" },
-  { ratio: [5,4],   cents: 386.314, cx: 5*4,    name: "major" },
-  { ratio: [14,11], cents: 417.508, cx: 14*11,  name: "undecimal major" },
-  { ratio: [9,7],   cents: 435.084, cx: 9*7,    name: "supermajor" },
-  { ratio: [13,10], cents: 454.214, cx: 13*10,  name: "tridecimal ultramajor" },
+  { ratio: [9,7],   cents: 435.084, cx: 9*7,   name: "supermajor" },
+  { ratio: [11,9],  cents: 347.408, cx: 11*9,  name: "undecimal neutral" },
+  { ratio: [13,10], cents: 454.214, cx: 13*10, name: "tridecimal ultramajor" },
+  { ratio: [13,11], cents: 289.210, cx: 13*11, name: "tridecimal minor" },
+  { ratio: [14,11], cents: 417.508, cx: 14*11, name: "undecimal major" },
+  { ratio: [15,13], cents: 247.741, cx: 15*13, name: "tridecimal inframinor" },
+  { ratio: [27,22], cents: 354.547, cx: 27*22, name: "rastmic neutral" },
 ];
 
 /* ══════════════════════════════════════════════
@@ -513,15 +532,15 @@ function buildSevenths() {
   return out;
 }
 
-const ALL_TRIADS   = buildTriads();
-const ALL_SEVENTHS = buildSevenths();
+let ALL_TRIADS   = buildTriads();
+let ALL_SEVENTHS = buildSevenths();
 
-const MAX_THIRD_CX   = Math.max(...THIRDS.map(t => t.cx));
-const MAX_FIFTH_CX   = Math.max(...ALL_TRIADS.map(t => t.fifthCx));
-const MAX_SEVENTH_CX = Math.max(...ALL_SEVENTHS.map(t => t.seventhCx));
-const MIN_THIRD_CX   = Math.min(...THIRDS.map(t => t.cx));
-const MIN_FIFTH_CX   = Math.min(...ALL_TRIADS.map(t => t.fifthCx));
-const MIN_SEVENTH_CX = Math.min(...ALL_SEVENTHS.map(t => t.seventhCx));
+let MAX_THIRD_CX   = Math.max(...THIRDS.map(t => t.cx));
+let MAX_FIFTH_CX   = Math.max(...ALL_TRIADS.map(t => t.fifthCx));
+let MAX_SEVENTH_CX = Math.max(...ALL_SEVENTHS.map(t => t.seventhCx));
+let MIN_THIRD_CX   = Math.min(...THIRDS.map(t => t.cx));
+let MIN_FIFTH_CX   = Math.min(...ALL_TRIADS.map(t => t.fifthCx));
+let MIN_SEVENTH_CX = Math.min(...ALL_SEVENTHS.map(t => t.seventhCx));
 
 /* ══════════════════════════════════════════════
    AUDIO
@@ -976,6 +995,54 @@ document.getElementById('chordList').addEventListener('copy', e => {
 });
 
 /* ══════════════════════════════════════════════
+   THIRDS EDITOR
+══════════════════════════════════════════════ */
+function thirdsToInputValue() {
+  return THIRDS.map(t => t.ratio[0] + '/' + t.ratio[1]).join(', ');
+}
+
+function rebuildFromThirds(newThirds) {
+  THIRDS       = newThirds;
+  ALL_TRIADS   = buildTriads();
+  ALL_SEVENTHS = buildSevenths();
+  MAX_THIRD_CX   = Math.max(...THIRDS.map(t => t.cx));
+  MAX_FIFTH_CX   = Math.max(...ALL_TRIADS.map(t => t.fifthCx));
+  MAX_SEVENTH_CX = Math.max(...ALL_SEVENTHS.map(t => t.seventhCx));
+  MIN_THIRD_CX   = Math.min(...THIRDS.map(t => t.cx));
+  MIN_FIFTH_CX   = Math.min(...ALL_TRIADS.map(t => t.fifthCx));
+  MIN_SEVENTH_CX = Math.min(...ALL_SEVENTHS.map(t => t.seventhCx));
+  // Reset sliders to full range
+  setupSlider('thirdCx',   'thirdCxVal',   MIN_THIRD_CX,   MAX_THIRD_CX);
+  setupSlider('fifthCx',   'fifthCxVal',   MIN_FIFTH_CX,   MAX_FIFTH_CX);
+  setupSlider('seventhCx', 'seventhCxVal', MIN_SEVENTH_CX, MAX_SEVENTH_CX);
+  render();
+}
+
+function parseThirdsInput(str) {
+  const errEl = document.getElementById('thirdsError');
+  const parts = str.split(',').map(s => s.trim()).filter(Boolean);
+  const result = [];
+  for (const p of parts) {
+    const m = p.match(/^(\d+)\/(\d+)$/);
+    if (!m) { errEl.textContent = `Invalid: "${p}" — use n/d format`; return null; }
+    const n = parseInt(m[1]), d = parseInt(m[2]);
+    if (n <= 0 || d <= 0) { errEl.textContent = `Invalid: "${p}" — must be positive`; return null; }
+    const g = gcd(n, d);
+    const cents = Math.log2(n/d) * 1200;
+    if (cents <= 0 || cents >= 1200) { errEl.textContent = `"${p}" is not between 1/1 and 2/1`; return null; }
+    result.push({ ratio: [n/g, d/g], cents, cx: (n/g)*(d/g), name: `${n/g}/${d/g}` });
+  }
+  if (!result.length) { errEl.textContent = 'Enter at least one ratio'; return null; }
+  errEl.textContent = '';
+  return result;
+}
+
+function onThirdsInput() {
+  const thirds = parseThirdsInput(document.getElementById('thirdsInput').value);
+  if (thirds) rebuildFromThirds(thirds);
+}
+
+/* ══════════════════════════════════════════════
    SLIDERS
 ══════════════════════════════════════════════ */
 function setupSlider(id, valId, min, max) {
@@ -997,6 +1064,8 @@ document.getElementById('edoMaxError').addEventListener('change', () => { if (ed
 ══════════════════════════════════════════════ */
 loadSaved();
 updateSavedCount();
+document.getElementById('thirdsInput').value = thirdsToInputValue();
+document.getElementById('thirdsInput').addEventListener('input', onThirdsInput);
 setMode('triads');
 </script>
 </body>

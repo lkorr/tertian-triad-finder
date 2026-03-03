@@ -174,7 +174,7 @@
     <label>Third complexity</label>
     <div class="row">
       <input type="range" id="thirdCx" min="0" max="1000" value="1000">
-      <span class="val" id="thirdCxVal">20,000</span>
+      <span class="val" id="thirdCxVal">2,000</span>
     </div>
     <div class="hint">Max num×den for each third interval</div>
   </div>
@@ -190,7 +190,7 @@
     <label>Seventh complexity</label>
     <div class="row">
       <input type="range" id="seventhCx" min="0" max="1000" value="1000">
-      <span class="val" id="seventhCxVal">100,000</span>
+      <span class="val" id="seventhCxVal">500,000</span>
     </div>
     <div class="hint">Max num×den for root→7th interval</div>
   </div>
@@ -244,13 +244,11 @@
 const THIRDS = [
   { ratio: [15,13], cents: 247.741, cx: 15*13, name: "tridecimal inframinor" },
   { ratio: [7,6],   cents: 266.871, cx: 7*6,   name: "subminor" },
-  { ratio: [33,28], cents: 284.447, cx: 33*28,  name: "undecimal supraminor" },
   { ratio: [13,11], cents: 289.210, cx: 13*11,  name: "tridecimal minor" },
   { ratio: [6,5],   cents: 315.641, cx: 6*5,    name: "minor" },
   { ratio: [11,9],  cents: 347.408, cx: 11*9,   name: "undecimal neutral" },
   { ratio: [27,22], cents: 354.547, cx: 27*22,  name: "rastmic neutral" },
   { ratio: [5,4],   cents: 386.314, cx: 5*4,    name: "major" },
-  { ratio: [33,26], cents: 412.745, cx: 33*26,  name: "tridecimal major" },
   { ratio: [14,11], cents: 417.508, cx: 14*11,  name: "undecimal major" },
   { ratio: [9,7],   cents: 435.084, cx: 9*7,    name: "supermajor" },
   { ratio: [13,10], cents: 454.214, cx: 13*10,  name: "tridecimal ultramajor" },
@@ -518,6 +516,13 @@ function buildSevenths() {
 const ALL_TRIADS   = buildTriads();
 const ALL_SEVENTHS = buildSevenths();
 
+const MAX_THIRD_CX   = Math.max(...THIRDS.map(t => t.cx));
+const MAX_FIFTH_CX   = Math.max(...ALL_TRIADS.map(t => t.fifthCx));
+const MAX_SEVENTH_CX = Math.max(...ALL_SEVENTHS.map(t => t.seventhCx));
+const MIN_THIRD_CX   = Math.min(...THIRDS.map(t => t.cx));
+const MIN_FIFTH_CX   = Math.min(...ALL_TRIADS.map(t => t.fifthCx));
+const MIN_SEVENTH_CX = Math.min(...ALL_SEVENTHS.map(t => t.seventhCx));
+
 /* ══════════════════════════════════════════════
    AUDIO
 ══════════════════════════════════════════════ */
@@ -564,12 +569,12 @@ function setMode(m) {
 /* ══════════════════════════════════════════════
    FILTERS
 ══════════════════════════════════════════════ */
-function sliderToCx(pos, max) { return Math.round(Math.pow(pos/1000, 3) * max); }
+function sliderToCx(pos, min, max) { return Math.round(min * Math.pow(max/min, pos/1000)); }
 function getFilters() {
   return {
-    thirdCx:   sliderToCx(+document.getElementById('thirdCx').value,   20000),
-    fifthCx:   sliderToCx(+document.getElementById('fifthCx').value,   50000),
-    seventhCx: sliderToCx(+document.getElementById('seventhCx').value, 100000),
+    thirdCx:   sliderToCx(+document.getElementById('thirdCx').value,   MIN_THIRD_CX,   MAX_THIRD_CX),
+    fifthCx:   sliderToCx(+document.getElementById('fifthCx').value,   MIN_FIFTH_CX,   MAX_FIFTH_CX),
+    seventhCx: sliderToCx(+document.getElementById('seventhCx').value, MIN_SEVENTH_CX, MAX_SEVENTH_CX),
   };
 }
 
@@ -973,17 +978,16 @@ document.getElementById('chordList').addEventListener('copy', e => {
 /* ══════════════════════════════════════════════
    SLIDERS
 ══════════════════════════════════════════════ */
-function setupSlider(id, valId, max) {
+function setupSlider(id, valId, min, max) {
   const el  = document.getElementById(id);
   const val = document.getElementById(valId);
-  el.addEventListener('input',  () => { val.textContent = sliderToCx(+el.value, max).toLocaleString(); });
-  el.addEventListener('change', () => render());
-  val.textContent = sliderToCx(+el.value, max).toLocaleString();
+  el.addEventListener('input',  () => { val.textContent = sliderToCx(+el.value, min, max).toLocaleString(); render(); });
+  val.textContent = sliderToCx(+el.value, min, max).toLocaleString();
 }
 
-setupSlider('thirdCx',   'thirdCxVal',   20000);
-setupSlider('fifthCx',   'fifthCxVal',   50000);
-setupSlider('seventhCx', 'seventhCxVal', 100000);
+setupSlider('thirdCx',   'thirdCxVal',   MIN_THIRD_CX,   MAX_THIRD_CX);
+setupSlider('fifthCx',   'fifthCxVal',   MIN_FIFTH_CX,   MAX_FIFTH_CX);
+setupSlider('seventhCx', 'seventhCxVal', MIN_SEVENTH_CX, MAX_SEVENTH_CX);
 
 document.getElementById('edoInput').addEventListener('change',    () => { if (edoActive) render(); });
 document.getElementById('edoMaxError').addEventListener('change', () => { if (edoActive) render(); });

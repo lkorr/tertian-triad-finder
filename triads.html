@@ -162,6 +162,28 @@
   }
   .unsave-btn:hover { color: #d66; }
 
+  .share-btn {
+    float: right; background: none; border: 1px solid #5a4a2a; color: #a86; cursor: pointer;
+    font-size: 0.8em; padding: 1px 7px; border-radius: 3px; margin-left: 6px;
+  }
+  .share-btn:hover { background: #2a1f10; color: #fc9; border-color: #8a6a3a; }
+  .share-btn.copied { color: #8d5; border-color: #4a6a3a; }
+
+  /* ── Import banner ── */
+  #importBanner {
+    background: #1a2a1a; border: 1px solid #4a6a3a; border-radius: 6px;
+    padding: 12px 16px; margin-bottom: 16px; display: none;
+  }
+  #importBanner .import-title { color: #afa; font-size: 0.95em; margin-bottom: 8px; }
+  #importBanner .import-actions { display: flex; gap: 8px; margin-top: 10px; }
+  #importBanner .import-actions button {
+    padding: 4px 12px; border-radius: 4px; font: inherit; cursor: pointer; font-size: 0.85em;
+  }
+  .import-accept { background: #2a4a2a; color: #8d5; border: 1px solid #4a6a3a; }
+  .import-accept:hover { background: #354a2a; }
+  .import-dismiss { background: none; color: #888; border: 1px solid #444; }
+  .import-dismiss:hover { color: #aaa; }
+
   .empty { color: #555; padding: 20px 10px; }
 
   /* ── Thirds editor ── */
@@ -247,6 +269,15 @@
 </div>
 
 <div id="edoSummary" style="display:none"></div>
+
+<div id="importBanner">
+  <div class="import-title" id="importTitle"></div>
+  <div id="importRows"></div>
+  <div class="import-actions">
+    <button class="import-accept" onclick="importSharedChords()">Import all</button>
+    <button class="import-dismiss" onclick="dismissImport()">Dismiss</button>
+  </div>
+</div>
 
 <div class="tabs">
   <button class="tab active" id="tabTriads"   onclick="setMode('triads')">Triads</button>
@@ -901,7 +932,8 @@ function renderSaved() {
   for (const edo of edoKeys) {
     const group = byEdo.get(edo);
     const edoLabel = edo ? `${edo}edo` : 'No EDO';
-    html.push(`<div class="saved-edo-group"><div class="saved-edo-header">${edoLabel} — ${group.length} chord${group.length!==1?'s':''}</div>`);
+    const shareId = `share-${edo}`;
+    html.push(`<div class="saved-edo-group"><div class="saved-edo-header">${edoLabel} — ${group.length} chord${group.length!==1?'s':''}<button class="share-btn" id="${shareId}" onclick="shareGroup(${edo})">Share</button></div>`);
 
     const hasEdo = !!edo;
     const stepsHeader = hasEdo
@@ -995,6 +1027,59 @@ document.getElementById('chordList').addEventListener('copy', e => {
 });
 
 /* ══════════════════════════════════════════════
+   SHARE / IMPORT
+══════════════════════════════════════════════ */
+function shareGroup(edo) {
+  const group = savedChords.filter(s => s.edo === edo);
+  if (!group.length) return;
+  const encoded = btoa(JSON.stringify(group));
+  const url = location.href.split('#')[0] + '#share=' + encoded;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById(`share-${edo}`);
+    if (!btn) return;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Share'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+let sharedChords = [];
+
+function loadShareFromHash() {
+  const hash = location.hash;
+  if (!hash.startsWith('#share=')) return;
+  try {
+    sharedChords = JSON.parse(atob(hash.slice(7)));
+  } catch { return; }
+  if (!sharedChords.length) return;
+
+  const edo = sharedChords[0].edo;
+  const edoLabel = edo ? `${edo}edo` : 'No EDO';
+  const newCount = sharedChords.filter(s => !isSaved(s.centsKey, s.edo)).length;
+
+  document.getElementById('importTitle').textContent =
+    `Shared: ${sharedChords.length} chord${sharedChords.length!==1?'s':''} (${edoLabel}) — ${newCount} new to you`;
+  document.getElementById('importRows').textContent = sharedChords
+    .map(s => s.label || s.centsKey).join('  ·  ');
+  document.getElementById('importBanner').style.display = '';
+  setMode('saved');
+}
+
+function importSharedChords() {
+  for (const s of sharedChords) {
+    if (!isSaved(s.centsKey, s.edo)) saveChord(s);
+  }
+  dismissImport();
+  render();
+}
+
+function dismissImport() {
+  sharedChords = [];
+  document.getElementById('importBanner').style.display = 'none';
+  history.replaceState(null, '', location.pathname + location.search);
+}
+
+/* ══════════════════════════════════════════════
    THIRDS EDITOR
 ══════════════════════════════════════════════ */
 function thirdsToInputValue() {
@@ -1066,7 +1151,8 @@ loadSaved();
 updateSavedCount();
 document.getElementById('thirdsInput').value = thirdsToInputValue();
 document.getElementById('thirdsInput').addEventListener('input', onThirdsInput);
-setMode('triads');
+loadShareFromHash();
+if (!location.hash.startsWith('#share=')) setMode('triads');
 </script>
 </body>
 </html>

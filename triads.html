@@ -264,8 +264,11 @@
 </div>
 
 <div class="thirds-editor">
-  <label>Thirds (comma-separated ratios, e.g. <span style="color:#cda">6/5, 5/4, 9/7</span>)</label>
-  <input type="text" id="thirdsInput">
+  <label>Step intervals (comma-separated ratios, e.g. <span style="color:#cda">6/5, 5/4, 9/7</span>)</label>
+  <div style="display:flex;gap:8px;align-items:center">
+    <input type="text" id="thirdsInput" style="flex:1">
+    <button onclick="resetThirds()" style="flex-shrink:0;padding:4px 10px;font-size:0.85em">Reset</button>
+  </div>
   <div class="thirds-error" id="thirdsError"></div>
 </div>
 
@@ -296,6 +299,7 @@ let THIRDS = [
   { ratio: [15,13], cents: 247.741, cx: 15*13, name: "tridecimal inframinor" },
   { ratio: [27,22], cents: 354.547, cx: 27*22, name: "rastmic neutral" },
 ];
+const DEFAULT_THIRDS_STR = THIRDS.map(t => t.ratio[0] + '/' + t.ratio[1]).join(', ');
 
 /* ══════════════════════════════════════════════
    MATH
@@ -437,6 +441,7 @@ function toggleForced(edo, ratioStr) {
 
 function toggleEdo() {
   edoActive = !edoActive;
+  localStorage.setItem('ji_edo_active', edoActive ? '1' : '0');
   document.getElementById('edoBtn').classList.toggle('active', edoActive);
   document.getElementById('edoBtn').textContent = edoActive ? 'Clear' : 'Apply';
   render();
@@ -1212,6 +1217,16 @@ function parseThirdsInput(str) {
 
 function onThirdsInput() {
   const thirds = parseThirdsInput(document.getElementById('thirdsInput').value);
+  if (thirds) {
+    localStorage.setItem('ji_thirds', document.getElementById('thirdsInput').value);
+    rebuildFromThirds(thirds);
+  }
+}
+
+function resetThirds() {
+  document.getElementById('thirdsInput').value = DEFAULT_THIRDS_STR;
+  localStorage.removeItem('ji_thirds');
+  const thirds = parseThirdsInput(DEFAULT_THIRDS_STR);
   if (thirds) rebuildFromThirds(thirds);
 }
 
@@ -1221,26 +1236,69 @@ function onThirdsInput() {
 function setupSlider(id, valId, min, max) {
   const el  = document.getElementById(id);
   const val = document.getElementById(valId);
-  el.addEventListener('input',  () => { val.textContent = sliderToCx(+el.value, min, max).toLocaleString(); render(); });
+  el.addEventListener('input', () => {
+    val.textContent = sliderToCx(+el.value, min, max).toLocaleString();
+    localStorage.setItem('ji_slider_' + id, el.value);
+    render();
+  });
   val.textContent = sliderToCx(+el.value, min, max).toLocaleString();
 }
-
-setupSlider('thirdCx',   'thirdCxVal',   MIN_THIRD_CX,   MAX_THIRD_CX);
-setupSlider('fifthCx',   'fifthCxVal',   MIN_FIFTH_CX,   MAX_FIFTH_CX);
-setupSlider('seventhCx', 'seventhCxVal', MIN_SEVENTH_CX, MAX_SEVENTH_CX);
-
-document.getElementById('edoInput').addEventListener('change',    () => { if (edoActive) render(); });
-document.getElementById('edoMaxError').addEventListener('change', () => { if (edoActive) render(); });
 
 /* ══════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════ */
 loadSaved();
 updateSavedCount();
-document.getElementById('thirdsInput').value = thirdsToInputValue();
+
+// Restore step intervals (must happen before setupSlider so min/max are correct)
+const savedThirds = localStorage.getItem('ji_thirds');
+if (savedThirds) {
+  const thirds = parseThirdsInput(savedThirds);
+  if (thirds) {
+    THIRDS = thirds;
+    ALL_TRIADS   = buildTriads();
+    ALL_SEVENTHS = buildSevenths();
+    MAX_THIRD_CX   = Math.max(...THIRDS.map(t => t.cx));
+    MAX_FIFTH_CX   = Math.max(...ALL_TRIADS.map(t => t.fifthCx));
+    MAX_SEVENTH_CX = Math.max(...ALL_SEVENTHS.map(t => t.seventhCx));
+    MIN_THIRD_CX   = Math.min(...THIRDS.map(t => t.cx));
+    MIN_FIFTH_CX   = Math.min(...ALL_TRIADS.map(t => t.fifthCx));
+    MIN_SEVENTH_CX = Math.min(...ALL_SEVENTHS.map(t => t.seventhCx));
+  }
+}
+document.getElementById('thirdsInput').value = savedThirds || thirdsToInputValue();
 document.getElementById('thirdsInput').addEventListener('input', onThirdsInput);
 
-// Restore persisted settings
+// Restore slider positions (before setupSlider so the value is in place when val text is set)
+['thirdCx', 'fifthCx', 'seventhCx'].forEach(id => {
+  const v = localStorage.getItem('ji_slider_' + id);
+  if (v !== null) document.getElementById(id).value = v;
+});
+
+setupSlider('thirdCx',   'thirdCxVal',   MIN_THIRD_CX,   MAX_THIRD_CX);
+setupSlider('fifthCx',   'fifthCxVal',   MIN_FIFTH_CX,   MAX_FIFTH_CX);
+setupSlider('seventhCx', 'seventhCxVal', MIN_SEVENTH_CX, MAX_SEVENTH_CX);
+
+// Restore EDO settings
+const savedEdo = localStorage.getItem('ji_edo');
+if (savedEdo) document.getElementById('edoInput').value = savedEdo;
+const savedEdoError = localStorage.getItem('ji_edo_error');
+if (savedEdoError) document.getElementById('edoMaxError').value = savedEdoError;
+if (localStorage.getItem('ji_edo_active') === '1') {
+  edoActive = true;
+  document.getElementById('edoBtn').classList.add('active');
+  document.getElementById('edoBtn').textContent = 'Clear';
+}
+document.getElementById('edoInput').addEventListener('change', () => {
+  localStorage.setItem('ji_edo', document.getElementById('edoInput').value);
+  if (edoActive) render();
+});
+document.getElementById('edoMaxError').addEventListener('change', () => {
+  localStorage.setItem('ji_edo_error', document.getElementById('edoMaxError').value);
+  if (edoActive) render();
+});
+
+// Restore timbre
 const savedTimbre = localStorage.getItem('ji_timbre');
 if (savedTimbre) document.getElementById('timbre').value = savedTimbre;
 document.getElementById('timbre').addEventListener('change', () => {

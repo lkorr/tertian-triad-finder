@@ -134,16 +134,7 @@
   .seventh-cents  { width: 290px; }
 
   .n, .c, .r { display: inline-block; }
-  .copy-text { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; white-space: pre; user-select: text; overflow: hidden; }
-  .chord-row { position: relative; }
-  .chord-row .col-save,
-  .chord-row .col-notes,
-  .chord-row .col-thirds,
-  .chord-row .col-cents,
-  .chord-row .col-int,
-  .chord-row .col-steps,
-  .chord-row .col-edo-cents,
-  .chord-row .sep { user-select: none; }
+  .chord-row .col-save { user-select: none; }
   .triad-notes   .n { width: 68px; }
   .triad-thirds  .r { width: 62px; }
   .triad-cents   .c { width: 72px; }
@@ -636,10 +627,6 @@ function stepsColHtml(edoSteps, stepSize) {
        + `<span class="sep">|</span><span class="col-edo-cents">${edoCentsArr.join('  ')}</span>`;
 }
 
-function copySpan(parts) {
-  return `<span class="copy-text">${parts.join(' | ')}\n</span>`;
-}
-
 /* ── Triad row HTML ── */
 function triadRowHtml(t, stepMap, edoState, savedEdoNum) {
   const notes  = `<span class="col-notes triad-notes"><span class="n">1/1</span><span class="n">${fr(t.t1.ratio)}</span><span class="n">${fr(t.fifth)}</span></span>`;
@@ -656,11 +643,8 @@ function triadRowHtml(t, stepMap, edoState, savedEdoNum) {
   const saved    = isSaved(centsKey, edo);
   const ratios     = [fr(t.t1.ratio), fr(t.t2.ratio)].join(',');
   const noteRatios = ['1/1', fr(t.t1.ratio), fr(t.fifth)].join(',');
-  const copyParts  = [`1/1 ${fr(t.t1.ratio)} ${fr(t.fifth)}`, `${fr(t.t1.ratio)} ${fr(t.t2.ratio)}`, `0c ${t.t1.cents.toFixed(2)}c ${t.fifthCents.toFixed(2)}c`, intStr];
-  if (stepMap) { const stepSize = edoState.stepSize; copyParts.push(edoSteps.join(' ')); copyParts.push(edoSteps.map(s=>(s*stepSize).toFixed(1)+'c').join(' ')); }
   return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${centsKey}" data-edo-steps="${edoSteps.join(',')}" data-edo="${edo}" data-label="${label}" data-ratios="${ratios}" data-note-ratios="${noteRatios}" data-int="${intStr}" data-type="triad">`
     + saveBtn(centsKey, edo)
-    + copySpan(copyParts)
     + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
     + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;
 }
@@ -682,11 +666,8 @@ function seventhRowHtml(t, stepMap, edoState, savedEdoNum) {
   const saved = isSaved(centsKey, edo);
   const ratios     = [fr(t.t1.ratio), fr(t.t2.ratio), fr(t.t3.ratio)].join(',');
   const noteRatios = ['1/1', fr(t.t1.ratio), fr(t.fifth), fr(t.seventh)].join(',');
-  const copyParts  = [`1/1 ${fr(t.t1.ratio)} ${fr(t.fifth)} ${fr(t.seventh)}`, `${fr(t.t1.ratio)} ${fr(t.t2.ratio)} ${fr(t.t3.ratio)}`, `0c ${t.t1.cents.toFixed(2)}c ${t.fifthCents.toFixed(2)}c ${t.seventhCents.toFixed(2)}c`, intStr];
-  if (stepMap) { const stepSize = edoState.stepSize; copyParts.push(edoSteps.join(' ')); copyParts.push(edoSteps.map(s=>(s*stepSize).toFixed(1)+'c').join(' ')); }
   return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${centsKey}" data-edo-steps="${edoSteps.join(',')}" data-edo="${edo}" data-label="${label}" data-ratios="${ratios}" data-note-ratios="${noteRatios}" data-int="${intStr}" data-type="seventh">`
     + saveBtn(centsKey, edo)
-    + copySpan(copyParts)
     + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
     + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;
 }
@@ -852,11 +833,8 @@ function savedRowHtml(s) {
   const sc = (edo && edoStepsArr.length) ? stepsColHtml(edoStepsArr, stepSize) : '';
 
   const saved = isSaved(s.centsKey, edo);
-  const copyParts = [noteList.join(' '), thirdsList.join(' '), centsVals.map(c => (c===0?'0':c.toFixed(2))+'c').join(' '), intStr];
-  if (edo && edoStepsArr.length) { copyParts.push(edoStepsArr.join(' ')); copyParts.push(edoStepsArr.map(st=>(st*stepSize).toFixed(1)+'c').join(' ')); }
   return `<div class="chord-row${saved ? ' saved' : ''}" data-cents="${s.centsKey}" data-edo-steps="${s.edoSteps||''}" data-edo="${edo}" data-label="${s.label||''}" data-ratios="${s.ratios||''}" data-note-ratios="${s.noteRatios||''}" data-int="${intStr}" data-type="${s.type||'triad'}">`
     + `<span class="col-save"><button class="save-btn${saved ? ' saved' : ''}" title="${saved ? 'Unsave' : 'Save'}">${saved ? '★' : '☆'}</button></span>`
-    + copySpan(copyParts)
     + `${notes}<span class="sep">|</span>${thirds}<span class="sep">|</span>${cents}`
     + `<span class="sep">|</span><span class="col-int">${intStr}</span>${sc}</div>`;
 }
@@ -947,6 +925,37 @@ function render() {
     });
   });
 }
+
+document.getElementById('chordList').addEventListener('copy', e => {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+
+  // Collect all chord-rows that overlap the selection
+  const rows = document.getElementById('chordList').querySelectorAll('.chord-row');
+  const lines = [];
+  for (const row of rows) {
+    if (!range.intersectsNode(row)) continue;
+    const r      = row.dataset;
+    const notes  = r.noteRatios ? r.noteRatios.split(',').join(' ') : (r.label || '');
+    const thirds = r.ratios ? r.ratios.split(',').join(' ') : '';
+    const cents  = r.cents ? r.cents.split(',').map(c => (+c===0?'0':(+c).toFixed(2))+'c').join(' ') : '';
+    const int_   = r.int || '';
+    const parts  = [notes, thirds, cents, int_].filter(Boolean);
+    const edo    = +r.edo || 0;
+    if (edo && r.edoSteps) {
+      const stepSize = 1200 / edo;
+      const steps    = r.edoSteps.split(',').map(Number);
+      parts.push(steps.join(' '));
+      parts.push(steps.map(s => (s * stepSize).toFixed(1) + 'c').join(' '));
+    }
+    lines.push(parts.join(' | '));
+  }
+
+  if (!lines.length) return;
+  e.preventDefault();
+  e.clipboardData.setData('text/plain', lines.join('\n'));
+});
 
 /* ══════════════════════════════════════════════
    SLIDERS

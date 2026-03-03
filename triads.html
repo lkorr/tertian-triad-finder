@@ -586,12 +586,10 @@ function stepsToEdoCents(steps, edo) { return steps.map(s => s * (1200/edo)); }
 
 function attachRowListeners(container) {
   container.querySelectorAll('.chord-row').forEach(row => {
-    // play on click, but not if the user is drag-selecting text
-    let mouseDownX, mouseDownY;
-    row.addEventListener('mousedown', e => { mouseDownX = e.clientX; mouseDownY = e.clientY; });
+    // play on click, but not if the user has selected text
     row.addEventListener('click', e => {
       if (e.target.closest('.save-btn')) return;
-      if (Math.abs(e.clientX - mouseDownX) > 4 || Math.abs(e.clientY - mouseDownY) > 4) return;
+      if (window.getSelection && window.getSelection().toString().length > 0) return;
       const useEdo  = playEdoMode && row.dataset.edo && +row.dataset.edo > 0;
       let centsArr;
       if (useEdo) {

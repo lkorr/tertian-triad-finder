@@ -757,7 +757,19 @@ function cmpIntNums(a, b) {
   return 0;
 }
 
-function triadCmp(stepMap) {
+function triadError(t, stepMap, stepSize) {
+  if (!stepMap) return 0;
+  const s1 = stepMap.get(t.t1)||0, s2 = stepMap.get(t.t2)||0;
+  return Math.abs((s1)*stepSize - t.t1.cents) + Math.abs((s1+s2)*stepSize - t.fifthCents);
+}
+
+function seventhError(t, stepMap, stepSize) {
+  if (!stepMap) return 0;
+  const s1 = stepMap.get(t.t1)||0, s2 = stepMap.get(t.t2)||0, s3 = stepMap.get(t.t3)||0;
+  return Math.abs((s1)*stepSize - t.t1.cents) + Math.abs((s1+s2)*stepSize - t.fifthCents) + Math.abs((s1+s2+s3)*stepSize - t.seventhCents);
+}
+
+function triadCmp(stepMap, stepSize) {
   return (a, b) => {
     if (sortCol === 'cents' || sortCol === 'chord') return a.fifthCents - b.fifthCents;
     if (sortCol === 'integer') return cmpIntNums(a, b);
@@ -766,11 +778,12 @@ function triadCmp(stepMap) {
       const sb = (stepMap.get(b.t1)||0) + (stepMap.get(b.t2)||0);
       return sa - sb;
     }
-    return a.t2.cx - b.t2.cx; // 'thirds' default
+    if (sortCol === 'error' && stepMap) return triadError(a, stepMap, stepSize) - triadError(b, stepMap, stepSize);
+    return a.t2.cx - b.t2.cx;
   };
 }
 
-function seventhCmp(stepMap) {
+function seventhCmp(stepMap, stepSize) {
   return (a, b) => {
     if (sortCol === 'cents' || sortCol === 'chord') return a.seventhCents - b.seventhCents;
     if (sortCol === 'integer') return cmpIntNums(a, b);
@@ -779,7 +792,8 @@ function seventhCmp(stepMap) {
       const sb = (stepMap.get(b.t1)||0) + (stepMap.get(b.t2)||0) + (stepMap.get(b.t3)||0);
       return sa - sb;
     }
-    return a.t2.cx - b.t2.cx || a.t3.cx - b.t3.cx; // 'thirds' default
+    if (sortCol === 'error' && stepMap) return seventhError(a, stepMap, stepSize) - seventhError(b, stepMap, stepSize);
+    return a.t2.cx - b.t2.cx || a.t3.cx - b.t3.cx;
   };
 }
 
@@ -803,17 +817,17 @@ function renderTriads(f, edoState) {
   let count = 0;
 
   const stepsHeader = stepMap
-    ? `<span class="sep"> </span>${colLabel('steps','edo steps','EDO step value')}<span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span><span class="sep"> </span><span style="min-width:70px;flex-shrink:0;color:#f86">total err</span>`
+    ? `<span class="sep"> </span>${colLabel('steps','edo steps','EDO step value')}<span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span><span class="sep"> </span>${colLabel('error','total err','total EDO error in cents')}`
     : '';
   html.push(
     `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
-    `<span style="width:210px;flex-shrink:0">${colLabel('chord','chord (1/1 · 3rd · 5th)','top note pitch')}</span><span class="sep"> </span>` +
-    `<span style="width:130px;flex-shrink:0">${colLabel('thirds','thirds (lower · upper)','interval complexity')}</span><span class="sep"> </span>` +
-    `<span style="width:220px;flex-shrink:0">${colLabel('cents','cents (0 · mid · top)','cent value')}</span><span class="sep"> </span>` +
-    `<span style="min-width:120px;flex-shrink:0">${colLabel('integer','integer','lowest integer ratio')}</span>${stepsHeader}</div>`
+    `<span style="width:226px;flex-shrink:0">${colLabel('chord','chord (1/1 · 3rd · 5th)','top note pitch')}</span><span class="sep"> </span>` +
+    `<span style="width:146px;flex-shrink:0">${colLabel('thirds','step intervals (lower · upper)','interval complexity')}</span><span class="sep"> </span>` +
+    `<span style="width:236px;flex-shrink:0">${colLabel('cents','cents (0 · mid · top)','cent value')}</span><span class="sep"> </span>` +
+    `<span style="min-width:120px;flex-shrink:0">${colLabel('integer','harmonic series','lowest integer ratio')}</span>${stepsHeader}</div>`
   );
 
-  const cmp = triadCmp(stepMap);
+  const cmp = triadCmp(stepMap, edoState ? edoState.stepSize : 0);
   for (const t1 of activeThirds) {
     let group = ALL_TRIADS.filter(t =>
       t.t1 === t1 && t.t2.cx <= f.thirdCx && t.fifthCx <= f.fifthCx &&
@@ -846,17 +860,17 @@ function renderSevenths(f, edoState) {
   let count = 0;
 
   const stepsHeader = stepMap
-    ? `<span class="sep"> </span>${colLabel('steps','edo steps','EDO step value')}<span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span><span class="sep"> </span><span style="min-width:70px;flex-shrink:0;color:#f86">total err</span>`
+    ? `<span class="sep"> </span>${colLabel('steps','edo steps','EDO step value')}<span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span><span class="sep"> </span>${colLabel('error','total err','total EDO error in cents')}`
     : '';
   html.push(
     `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
-    `<span style="width:280px;flex-shrink:0">${colLabel('chord','chord (1/1 · 3rd · 5th · 7th)','top note pitch')}</span><span class="sep"> </span>` +
-    `<span style="width:200px;flex-shrink:0">${colLabel('thirds','thirds (lower · middle · upper)','interval complexity')}</span><span class="sep"> </span>` +
-    `<span style="width:290px;flex-shrink:0">${colLabel('cents','cents (0 · mid · 5th · top)','cent value')}</span><span class="sep"> </span>` +
-    `<span style="min-width:150px;flex-shrink:0">${colLabel('integer','integer','lowest integer ratio')}</span>${stepsHeader}</div>`
+    `<span style="width:304px;flex-shrink:0">${colLabel('chord','chord (1/1 · 3rd · 5th · 7th)','top note pitch')}</span><span class="sep"> </span>` +
+    `<span style="width:224px;flex-shrink:0">${colLabel('thirds','step intervals (lower · mid · upper)','interval complexity')}</span><span class="sep"> </span>` +
+    `<span style="width:314px;flex-shrink:0">${colLabel('cents','cents (0 · mid · 5th · top)','cent value')}</span><span class="sep"> </span>` +
+    `<span style="min-width:150px;flex-shrink:0">${colLabel('integer','harmonic series','lowest integer ratio')}</span>${stepsHeader}</div>`
   );
 
-  const cmp = seventhCmp(stepMap);
+  const cmp = seventhCmp(stepMap, edoState ? edoState.stepSize : 0);
   for (const t1 of activeThirds) {
     let group = ALL_SEVENTHS.filter(t =>
       t.t1 === t1 && t.t2.cx <= f.thirdCx && t.t3.cx <= f.thirdCx &&
@@ -905,7 +919,7 @@ function savedRowHtml(s) {
   const intStr = s.intStr || '';
 
   const edoStepsArr = s.edoSteps ? s.edoSteps.split(',').map(Number) : [];
-  const sc = (edo && edoStepsArr.length) ? stepsColHtml(edoStepsArr, stepSize) : '';
+  const sc = (edo && edoStepsArr.length) ? stepsColHtml(edoStepsArr, stepSize, centsVals) : '';
 
   const saved      = isSaved(s.centsKey, edo);
   const copyText   = chordCopyText(noteList.join(','), thirdsList.join(','), s.centsKey, intStr, edo, edoStepsArr, stepSize);
@@ -939,7 +953,7 @@ function renderSaved() {
 
     const hasEdo = !!edo;
     const stepsHeader = hasEdo
-      ? `<span class="sep"> </span><span style="min-width:80px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span>`
+      ? `<span class="sep"> </span><span style="min-width:80px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span><span class="sep"> </span><span style="min-width:70px;flex-shrink:0;color:#f86">total err</span>`
       : '';
 
     const triads    = group.filter(s => s.type !== 'seventh' && (s.centsKey||'').split(',').length !== 4);
@@ -949,25 +963,25 @@ function renderSaved() {
       html.push(
         `<div class="saved-type-header">Triads</div>` +
         `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
-        `<span style="width:210px;flex-shrink:0">chord (1/1 · 3rd · 5th)</span><span class="sep"> </span>` +
-        `<span style="width:130px;flex-shrink:0">thirds (lower · upper)</span><span class="sep"> </span>` +
-        `<span style="width:220px;flex-shrink:0">cents (0 · mid · top)</span><span class="sep"> </span>` +
-        `<span style="min-width:120px;flex-shrink:0">integer</span>${stepsHeader}</div>`
+        `<span style="width:226px;flex-shrink:0">chord (1/1 · 3rd · 5th)</span><span class="sep"> </span>` +
+        `<span style="width:146px;flex-shrink:0">step intervals (lower · upper)</span><span class="sep"> </span>` +
+        `<span style="width:236px;flex-shrink:0">cents (0 · mid · top)</span><span class="sep"> </span>` +
+        `<span style="min-width:120px;flex-shrink:0">harmonic series</span>${stepsHeader}</div>`
       );
       for (const s of triads) html.push(savedRowHtml(s));
     }
 
     if (sevenths.length) {
       const sevStepsHeader = hasEdo
-        ? `<span class="sep"> </span><span style="min-width:100px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span>`
+        ? `<span class="sep"> </span><span style="min-width:100px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span><span class="sep"> </span><span style="min-width:70px;flex-shrink:0;color:#f86">total err</span>`
         : '';
       html.push(
         `<div class="saved-type-header">Seventh chords</div>` +
         `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
-        `<span style="width:280px;flex-shrink:0">chord (1/1 · 3rd · 5th · 7th)</span><span class="sep"> </span>` +
-        `<span style="width:200px;flex-shrink:0">thirds (lower · middle · upper)</span><span class="sep"> </span>` +
-        `<span style="width:290px;flex-shrink:0">cents (0 · mid · 5th · top)</span><span class="sep"> </span>` +
-        `<span style="min-width:150px;flex-shrink:0">integer</span>${sevStepsHeader}</div>`
+        `<span style="width:304px;flex-shrink:0">chord (1/1 · 3rd · 5th · 7th)</span><span class="sep"> </span>` +
+        `<span style="width:224px;flex-shrink:0">step intervals (lower · mid · upper)</span><span class="sep"> </span>` +
+        `<span style="width:314px;flex-shrink:0">cents (0 · mid · 5th · top)</span><span class="sep"> </span>` +
+        `<span style="min-width:150px;flex-shrink:0">harmonic series</span>${sevStepsHeader}</div>`
       );
       for (const s of sevenths) html.push(savedRowHtml(s));
     }
@@ -1111,7 +1125,7 @@ function renderShared() {
 
   const hasEdo = !!edo;
   const stepsHeader = hasEdo
-    ? `<span class="sep"> </span><span style="min-width:80px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span>`
+    ? `<span class="sep"> </span><span style="min-width:80px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:110px;flex-shrink:0">edo cents</span><span class="sep"> </span><span style="min-width:70px;flex-shrink:0;color:#f86">total err</span>`
     : '';
   const triads   = sharedChords.filter(s => s.type !== 'seventh' && (s.centsKey||'').split(',').length !== 4);
   const sevenths = sharedChords.filter(s => s.type === 'seventh' || (s.centsKey||'').split(',').length === 4);
@@ -1120,24 +1134,24 @@ function renderShared() {
     html.push(
       `<div class="saved-type-header">Triads</div>` +
       `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
-      `<span style="width:210px;flex-shrink:0">chord (1/1 · 3rd · 5th)</span><span class="sep"> </span>` +
-      `<span style="width:130px;flex-shrink:0">thirds (lower · upper)</span><span class="sep"> </span>` +
-      `<span style="width:220px;flex-shrink:0">cents (0 · mid · top)</span><span class="sep"> </span>` +
-      `<span style="min-width:120px;flex-shrink:0">integer</span>${stepsHeader}</div>`
+      `<span style="width:226px;flex-shrink:0">chord (1/1 · 3rd · 5th)</span><span class="sep"> </span>` +
+      `<span style="width:146px;flex-shrink:0">step intervals (lower · upper)</span><span class="sep"> </span>` +
+      `<span style="width:236px;flex-shrink:0">cents (0 · mid · top)</span><span class="sep"> </span>` +
+      `<span style="min-width:120px;flex-shrink:0">harmonic series</span>${stepsHeader}</div>`
     );
     for (const s of triads) html.push(savedRowHtml(s));
   }
   if (sevenths.length) {
     const sevStepsHeader = hasEdo
-      ? `<span class="sep"> </span><span style="min-width:100px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span>`
+      ? `<span class="sep"> </span><span style="min-width:100px;flex-shrink:0">edo steps</span><span class="sep"> </span><span style="min-width:130px;flex-shrink:0">edo cents</span><span class="sep"> </span><span style="min-width:70px;flex-shrink:0;color:#f86">total err</span>`
       : '';
     html.push(
       `<div class="saved-type-header">Seventh chords</div>` +
       `<div class="col-labels"><span style="width:28px;flex-shrink:0"></span>` +
-      `<span style="width:280px;flex-shrink:0">chord (1/1 · 3rd · 5th · 7th)</span><span class="sep"> </span>` +
-      `<span style="width:200px;flex-shrink:0">thirds (lower · middle · upper)</span><span class="sep"> </span>` +
-      `<span style="width:290px;flex-shrink:0">cents (0 · mid · 5th · top)</span><span class="sep"> </span>` +
-      `<span style="min-width:150px;flex-shrink:0">integer</span>${sevStepsHeader}</div>`
+      `<span style="width:304px;flex-shrink:0">chord (1/1 · 3rd · 5th · 7th)</span><span class="sep"> </span>` +
+      `<span style="width:224px;flex-shrink:0">step intervals (lower · mid · upper)</span><span class="sep"> </span>` +
+      `<span style="width:314px;flex-shrink:0">cents (0 · mid · 5th · top)</span><span class="sep"> </span>` +
+      `<span style="min-width:150px;flex-shrink:0">harmonic series</span>${sevStepsHeader}</div>`
     );
     for (const s of sevenths) html.push(savedRowHtml(s));
   }

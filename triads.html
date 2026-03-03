@@ -928,7 +928,8 @@ function render() {
 function setupSlider(id, valId, max) {
   const el  = document.getElementById(id);
   const val = document.getElementById(valId);
-  el.addEventListener('input', () => { val.textContent = sliderToCx(+el.value, max).toLocaleString(); render(); });
+  el.addEventListener('input',  () => { val.textContent = sliderToCx(+el.value, max).toLocaleString(); });
+  el.addEventListener('change', () => render());
   val.textContent = sliderToCx(+el.value, max).toLocaleString();
 }
 
